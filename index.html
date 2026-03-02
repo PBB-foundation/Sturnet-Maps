@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Black Sea Water Temperature (Leaflet)</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100%; width: 100%; }
+
+    .panel {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.95);
+      padding: 10px 12px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      max-width: 260px;
+    }
+
+    .panel h3 { margin: 0 0 8px 0; font-size: 14px; }
+    .row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+    select { width: 100%; padding: 6px; border-radius: 8px; border: 1px solid #ccc; }
+
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      left: 12px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.95);
+      padding: 10px 12px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      width: 220px;
+    }
+
+    .legend-title { font-size: 13px; margin: 0 0 8px 0; font-weight: 600; }
+    .bar {
+      height: 10px;
+      border-radius: 6px;
+      background: linear-gradient(90deg,
+        #2c7bb6, #00a6ca, #00ccbc, #90eb9d, #ffff8c, #f9d057, #f29e2e, #e76818, #d7191c
+      );
+      border: 1px solid #ddd;
+    }
+    .legend-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; }
+    .hint { font-size: 12px; color: #444; margin-top: 8px; line-height: 1.25; }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <div class="panel">
+    <h3>Water temperature</h3>
+    <div class="row">
+      <label for="month" style="font-size:12px; min-width:60px;">Month</label>
+      <select id="month">
+        <option value="february">February 2025</option>
+        <option value="march">March 2025</option>
+        <option value="april">April 2025</option>
+      </select>
+    </div>
+    <div class="hint">
+      Use the dropdown to switch months.
+    </div>
+  </div>
+
+  <div class="legend" id="legend">
+    <div class="legend-title">Temperature (°C)</div>
+    <div class="bar"></div>
+    <div class="legend-labels">
+      <span id="minV">4.00</span>
+      <span id="maxV">11.00</span>
+    </div>
+  </div>
+
+  <script>
+    // --- Base map ---
+    const map = L.map("map").setView([44.2, 29.4], 8);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    L.control.scale({ metric: true, imperial: false }).addTo(map);
+
+    // --- AOI (optional) ---
+    // If you still have area_of_interest.geojson next to index.html, keep this ON.
+    // If you don't want it, you can comment it out.
+    const AOI_FILE = "area_of_interest.geojson";
+    fetch(AOI_FILE)
+      .then(r => r.json())
+      .then(gj => {
+        const aoiLayer = L.geoJSON(gj, {
+          style: { color: "#111", weight: 2, fillColor: "#000", fillOpacity: 0.05 }
+        }).addTo(map);
+        map.fitBounds(aoiLayer.getBounds(), { padding: [20, 20] });
+      })
+      .catch(() => {
+        // AOI is optional. If missing, nothing breaks.
+      });
+
+
+    const TILE_MIN_ZOOM = 6;
+    const TILE_MAX_ZOOM = 12;
+
+    const rasterTiles = {
+      february: L.tileLayer("sturnet_database/tiles/february/{z}/{x}/{y}.png", {
+        minZoom: TILE_MIN_ZOOM,
+        maxZoom: TILE_MAX_ZOOM,
+        tms: false,          // IMPORTANT: keep false because you did NOT invert Y in QGIS
+        opacity: 0.85,
+        bounds: null
+      }),
+      march: L.tileLayer("sturnet_database/tiles/march/{z}/{x}/{y}.png", {
+        minZoom: TILE_MIN_ZOOM,
+        maxZoom: TILE_MAX_ZOOM,
+        tms: false,
+        opacity: 0.85
+      }),
+      april: L.tileLayer("sturnet_database/tiles/april/{z}/{x}/{y}.png", {
+        minZoom: TILE_MIN_ZOOM,
+        maxZoom: TILE_MAX_ZOOM,
+        tms: false,
+        opacity: 0.85
+      })
+    };
+
+    let currentRaster = rasterTiles.february;
+    currentRaster.addTo(map);
+
+    // Switch by dropdown
+    document.getElementById("month").addEventListener("change", (e) => {
+      map.removeLayer(currentRaster);
+      currentRaster = rasterTiles[e.target.value];
+      currentRaster.addTo(map);
+    });
+  </script>
+</body>
+</html>
