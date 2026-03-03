@@ -61,16 +61,27 @@
 
   <div class="panel">
     <h3>Water temperature</h3>
+
+    <!-- NEW: Depth dropdown -->
+    <div class="row">
+      <label for="depth" style="font-size:12px; min-width:60px;">Depth</label>
+      <select id="depth">
+        <option value="surface" selected>Surface</option>
+        <option value="bottom">Bottom</option>
+      </select>
+    </div>
+
     <div class="row">
       <label for="month" style="font-size:12px; min-width:60px;">Month</label>
       <select id="month">
-        <option value="february">February 2025</option>
+        <option value="february" selected>February 2025</option>
         <option value="march">March 2025</option>
         <option value="april">April 2025</option>
       </select>
     </div>
+
     <div class="hint">
-      Use the dropdown to switch months.
+      Select depth and month.
     </div>
   </div>
 
@@ -95,8 +106,6 @@
     L.control.scale({ metric: true, imperial: false }).addTo(map);
 
     // --- AOI (optional) ---
-    // If you still have area_of_interest.geojson next to index.html, keep this ON.
-    // If you don't want it, you can comment it out.
     const AOI_FILE = "area_of_interest.geojson";
     fetch(AOI_FILE)
       .then(r => r.json())
@@ -106,45 +115,57 @@
         }).addTo(map);
         map.fitBounds(aoiLayer.getBounds(), { padding: [20, 20] });
       })
-      .catch(() => {
-        // AOI is optional. If missing, nothing breaks.
-      });
-
+      .catch(() => {});
 
     const TILE_MIN_ZOOM = 6;
     const TILE_MAX_ZOOM = 12;
 
-    const rasterTiles = {
-      february: L.tileLayer("sturnet_database/tiles/february/{z}/{x}/{y}.png", {
-        minZoom: TILE_MIN_ZOOM,
-        maxZoom: TILE_MAX_ZOOM,
-        tms: false,          // IMPORTANT: keep false because you did NOT invert Y in QGIS
-        opacity: 0.85,
-        bounds: null
-      }),
-      march: L.tileLayer("sturnet_database/tiles/march/{z}/{x}/{y}.png", {
-        minZoom: TILE_MIN_ZOOM,
-        maxZoom: TILE_MAX_ZOOM,
-        tms: false,
-        opacity: 0.85
-      }),
-      april: L.tileLayer("sturnet_database/tiles/april/{z}/{x}/{y}.png", {
-        minZoom: TILE_MIN_ZOOM,
-        maxZoom: TILE_MAX_ZOOM,
-        tms: false,
-        opacity: 0.85
-      })
+    // Your new folder structure:
+    // sturnet_database/tiles/surface/<month>/{z}/{x}/{y}.png
+    // sturnet_database/tiles/bottom/<month>/{z}/{x}/{y}.png
+    const TILE_ROOT = "sturnet_database/tiles";
+
+    // Ranges per depth
+    const depthRanges = {
+      surface: { min: 4.00, max: 11.00 },
+      bottom:  { min: 3.80, max: 11.30 }
     };
 
-    let currentRaster = rasterTiles.february;
-    currentRaster.addTo(map);
+    let currentRaster = null;
 
-    // Switch by dropdown
-    document.getElementById("month").addEventListener("change", (e) => {
-      map.removeLayer(currentRaster);
-      currentRaster = rasterTiles[e.target.value];
+    function updateLegend(depth) {
+      document.getElementById("minV").textContent = depthRanges[depth].min.toFixed(2);
+      document.getElementById("maxV").textContent = depthRanges[depth].max.toFixed(2);
+    }
+
+    function makeLayer(depth, month) {
+      const url = `${TILE_ROOT}/${depth}/${month}/{z}/{x}/{y}.png`;
+      return L.tileLayer(url, {
+        minZoom: TILE_MIN_ZOOM,
+        maxZoom: TILE_MAX_ZOOM,
+        tms: false,     // keep false (as you had)
+        opacity: 0.85
+      });
+    }
+
+    function refreshRaster() {
+      const depth = document.getElementById("depth").value;   // "surface" or "bottom"
+      const month  = document.getElementById("month").value;  // "february" / "march" / "april"
+
+      if (currentRaster) map.removeLayer(currentRaster);
+
+      currentRaster = makeLayer(depth, month);
       currentRaster.addTo(map);
-    });
+
+      updateLegend(depth);
+    }
+
+    // Initial load
+    refreshRaster();
+
+    // Switch by dropdowns
+    document.getElementById("depth").addEventListener("change", refreshRaster);
+    document.getElementById("month").addEventListener("change", refreshRaster);
   </script>
 </body>
 </html>
