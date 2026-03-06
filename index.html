@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Black Sea Water Temperature (Leaflet)</title>
+  <title>Black Sea Map (Leaflet)</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.pattern@0.1.0/dist/leaflet.pattern-src.js"></script>
 
   <style>
     html, body { height: 100%; margin: 0; }
@@ -22,12 +23,48 @@
       border-radius: 10px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.15);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      max-width: 260px;
+      max-width: 300px;
     }
 
-    .panel h3 { margin: 0 0 8px 0; font-size: 14px; }
-    .row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
-    select { width: 100%; padding: 6px; border-radius: 8px; border: 1px solid #ccc; }
+    .panel h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin: 6px 0;
+    }
+
+    label {
+      font-size: 12px;
+      min-width: 70px;
+    }
+
+    select {
+      width: 100%;
+      padding: 6px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0 4px 0;
+      font-size: 12px;
+    }
+
+    .checkbox-row input {
+      margin: 0;
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      accent-color: #28a745;
+    }
 
     .legend {
       position: absolute;
@@ -39,20 +76,91 @@
       border-radius: 10px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.15);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      width: 220px;
+      width: 240px;
     }
 
-    .legend-title { font-size: 13px; margin: 0 0 8px 0; font-weight: 600; }
+    .legend-title {
+      font-size: 13px;
+      margin: 0 0 8px 0;
+      font-weight: 600;
+    }
+
     .bar {
       height: 10px;
       border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+
+    .legend-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 12px;
+    }
+
+    .legend-divider {
+      height: 1px;
+      background: #ddd;
+      margin: 10px 0 8px 0;
+    }
+
+    .legend-line-item,
+    .legend-fill-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #333;
+      margin-top: 6px;
+    }
+
+    .legend-line-symbol {
+      display: inline-block;
+      width: 24px;
+      height: 0;
+      border-top: 2px solid #7f7f7f;
+      opacity: 0.9;
+      flex-shrink: 0;
+    }
+
+    .legend-hatch-symbol {
+      display: inline-block;
+      width: 24px;
+      height: 14px;
+      border: 1px solid #28a745;
+      background:
+        repeating-linear-gradient(
+          -45deg,
+          rgba(40,167,69,0.75) 0px,
+          rgba(40,167,69,0.75) 2px,
+          transparent 2px,
+          transparent 6px
+        );
+      flex-shrink: 0;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #444;
+      margin-top: 8px;
+      line-height: 1.25;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .temp-bar {
       background: linear-gradient(90deg,
         #2c7bb6, #00a6ca, #00ccbc, #90eb9d, #ffff8c, #f9d057, #f29e2e, #e76818, #d7191c
       );
-      border: 1px solid #ddd;
     }
-    .legend-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; }
-    .hint { font-size: 12px; color: #444; margin-top: 8px; line-height: 1.25; }
+
+    .bathy-bar {
+      background: linear-gradient(90deg,
+        #081d58, #253494, #225ea8, #1d91c0, #41b6c4, #7fcdbb, #c7e9b4, #edf8b1
+      );
+    }
   </style>
 </head>
 
@@ -60,19 +168,26 @@
   <div id="map"></div>
 
   <div class="panel">
-    <h3>Water temperature</h3>
+    <h3>Map layers</h3>
 
-    <!-- NEW: Depth dropdown -->
     <div class="row">
-      <label for="depth" style="font-size:12px; min-width:60px;">Depth</label>
+      <label for="layerType">Layer</label>
+      <select id="layerType">
+        <option value="temperature" selected>Temperature</option>
+        <option value="bathymetry">Bathymetry</option>
+      </select>
+    </div>
+
+    <div class="row" id="depthRow">
+      <label for="depth">Depth</label>
       <select id="depth">
         <option value="surface" selected>Surface</option>
         <option value="bottom">Bottom</option>
       </select>
     </div>
 
-    <div class="row">
-      <label for="month" style="font-size:12px; min-width:60px;">Month</label>
+    <div class="row" id="monthRow">
+      <label for="month">Month</label>
       <select id="month">
         <option value="february" selected>February 2025</option>
         <option value="march">March 2025</option>
@@ -80,92 +195,257 @@
       </select>
     </div>
 
-    <div class="hint">
-      Select depth and month.
+    <div class="checkbox-row">
+      <input type="checkbox" id="habitatToggle">
+      <label for="habitatToggle" style="min-width:auto;">Sturgeon habitat</label>
     </div>
+
+    <div class="hint" id="panelHint">Select depth and month.</div>
   </div>
 
   <div class="legend" id="legend">
-    <div class="legend-title">Temperature (°C)</div>
-    <div class="bar"></div>
+    <div class="legend-title" id="legendTitle">Temperature (°C)</div>
+
+    <div class="bar temp-bar" id="legendBar"></div>
+
     <div class="legend-labels">
       <span id="minV">4.00</span>
       <span id="maxV">11.00</span>
     </div>
+
+    <div class="legend-divider"></div>
+
+    <div class="legend-line-item">
+      <span class="legend-line-symbol"></span>
+      <span>Izobate_AOI</span>
+    </div>
+
+    <div class="legend-fill-item">
+      <span class="legend-hatch-symbol"></span>
+      <span>Sturgeon habitat area</span>
+    </div>
   </div>
 
   <script>
-    // --- Base map ---
     const map = L.map("map").setView([44.2, 29.4], 8);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
     L.control.scale({ metric: true, imperial: false }).addTo(map);
 
-    // --- AOI (optional) ---
     const AOI_FILE = "area_of_interest.geojson";
-    fetch(AOI_FILE)
-      .then(r => r.json())
-      .then(gj => {
-        const aoiLayer = L.geoJSON(gj, {
-          style: { color: "#111", weight: 2, fillColor: "#000", fillOpacity: 0.05 }
-        }).addTo(map);
-        map.fitBounds(aoiLayer.getBounds(), { padding: [20, 20] });
-      })
-      .catch(() => {});
+    const IZOBATE_FILE = "izobate_AOI.geojson";
+    const HABITAT_FILE = "sturgeon_habitat.geojson";
 
     const TILE_MIN_ZOOM = 6;
     const TILE_MAX_ZOOM = 12;
-
-    // Your new folder structure:
-    // sturnet_database/tiles/surface/<month>/{z}/{x}/{y}.png
-    // sturnet_database/tiles/bottom/<month>/{z}/{x}/{y}.png
     const TILE_ROOT = "sturnet_database/tiles";
 
-    // Ranges per depth
     const depthRanges = {
       surface: { min: 4.00, max: 11.00 },
       bottom:  { min: 3.80, max: 11.30 }
     };
 
-    let currentRaster = null;
+    const bathyRange = {
+      min: -1347.78,
+      max: 1.56713
+    };
 
-    function updateLegend(depth) {
-      document.getElementById("minV").textContent = depthRanges[depth].min.toFixed(2);
-      document.getElementById("maxV").textContent = depthRanges[depth].max.toFixed(2);
+    let currentRaster = null;
+    let aoiLayer = null;
+    let izobateLayer = null;
+    let habitatLayer = null;
+    let hatchPattern = null;
+
+    if (typeof L.StripePattern !== "undefined") {
+      hatchPattern = new L.StripePattern({
+        weight: 2,
+        spaceWeight: 4,
+        color: "#28a745",
+        spaceColor: "transparent",
+        opacity: 0.75,
+        angle: 45
+      });
+      hatchPattern.addTo(map);
+    } else {
+      console.warn("Leaflet.pattern plugin did not load. Habitat will use plain fill.");
     }
 
-    function makeLayer(depth, month) {
+    function updateLegendForTemperature(depth) {
+      document.getElementById("legendTitle").textContent = "Temperature (°C)";
+      document.getElementById("minV").textContent = depthRanges[depth].min.toFixed(2);
+      document.getElementById("maxV").textContent = depthRanges[depth].max.toFixed(2);
+
+      const legendBar = document.getElementById("legendBar");
+      legendBar.classList.remove("bathy-bar");
+      legendBar.classList.add("temp-bar");
+    }
+
+    function updateLegendForBathymetry() {
+      document.getElementById("legendTitle").textContent = "Bathymetry (m)";
+      document.getElementById("minV").textContent = bathyRange.min.toFixed(2);
+      document.getElementById("maxV").textContent = bathyRange.max.toFixed(2);
+
+      const legendBar = document.getElementById("legendBar");
+      legendBar.classList.remove("temp-bar");
+      legendBar.classList.add("bathy-bar");
+    }
+
+    function makeTemperatureLayer(depth, month) {
       const url = `${TILE_ROOT}/${depth}/${month}/{z}/{x}/{y}.png`;
       return L.tileLayer(url, {
         minZoom: TILE_MIN_ZOOM,
         maxZoom: TILE_MAX_ZOOM,
-        tms: false,     // keep false (as you had)
+        tms: false,
         opacity: 0.85
       });
     }
 
-    function refreshRaster() {
-      const depth = document.getElementById("depth").value;   // "surface" or "bottom"
-      const month  = document.getElementById("month").value;  // "february" / "march" / "april"
-
-      if (currentRaster) map.removeLayer(currentRaster);
-
-      currentRaster = makeLayer(depth, month);
-      currentRaster.addTo(map);
-
-      updateLegend(depth);
+    function makeBathymetryLayer() {
+      const url = `${TILE_ROOT}/bathymetry/{z}/{x}/{y}.png`;
+      return L.tileLayer(url, {
+        minZoom: TILE_MIN_ZOOM,
+        maxZoom: TILE_MAX_ZOOM,
+        tms: false,
+        opacity: 0.85
+      });
     }
 
-    // Initial load
-    refreshRaster();
+    function updatePanelVisibility() {
+      const layerType = document.getElementById("layerType").value;
+      const depthRow = document.getElementById("depthRow");
+      const monthRow = document.getElementById("monthRow");
+      const panelHint = document.getElementById("panelHint");
 
-    // Switch by dropdowns
+      if (layerType === "temperature") {
+        depthRow.classList.remove("hidden");
+        monthRow.classList.remove("hidden");
+        panelHint.textContent = "Select depth and month.";
+      } else {
+        depthRow.classList.add("hidden");
+        monthRow.classList.add("hidden");
+        panelHint.textContent = "Bathymetry layer is displayed.";
+      }
+    }
+
+    function keepOverlaysOnTop() {
+      if (izobateLayer) izobateLayer.bringToFront();
+      if (habitatLayer && map.hasLayer(habitatLayer)) habitatLayer.bringToFront();
+    }
+
+    function refreshRaster() {
+      const layerType = document.getElementById("layerType").value;
+      const depth = document.getElementById("depth").value;
+      const month = document.getElementById("month").value;
+
+      if (currentRaster) {
+        map.removeLayer(currentRaster);
+      }
+
+      if (layerType === "temperature") {
+        currentRaster = makeTemperatureLayer(depth, month);
+        updateLegendForTemperature(depth);
+      } else {
+        currentRaster = makeBathymetryLayer();
+        updateLegendForBathymetry();
+      }
+
+      currentRaster.addTo(map);
+      keepOverlaysOnTop();
+      updatePanelVisibility();
+    }
+
+    fetch(AOI_FILE)
+      .then(r => {
+        if (!r.ok) throw new Error(`AOI fetch failed: ${r.status}`);
+        return r.json();
+      })
+      .then(gj => {
+        aoiLayer = L.geoJSON(gj, {
+          style: {
+            color: "#111",
+            weight: 2,
+            fillColor: "#000",
+            fillOpacity: 0.03
+          }
+        }).addTo(map);
+
+        map.fitBounds(aoiLayer.getBounds(), { padding: [20, 20] });
+      })
+      .catch(err => console.log("AOI not loaded:", err));
+
+    fetch(IZOBATE_FILE)
+      .then(r => {
+        if (!r.ok) throw new Error(`Izobaths fetch failed: ${r.status}`);
+        return r.json();
+      })
+      .then(gj => {
+        izobateLayer = L.geoJSON(gj, {
+          style: function() {
+            return {
+              color: "#7f7f7f",
+              weight: 1.5,
+              opacity: 0.9
+            };
+          },
+          onEachFeature: function(feature, layer) {
+            const props = feature.properties || {};
+            const val = props.value ?? props.VALUE ?? props.depth ?? props.DEPTH ?? null;
+            if (val !== null) layer.bindPopup(`Isobath: ${val} m`);
+          }
+        }).addTo(map);
+
+        izobateLayer.bringToFront();
+      })
+      .catch(err => console.log("Izobaths not loaded:", err));
+
+    fetch(HABITAT_FILE)
+      .then(r => {
+        if (!r.ok) throw new Error(`Habitat fetch failed: ${r.status}`);
+        return r.json();
+      })
+      .then(gj => {
+        habitatLayer = L.geoJSON(gj, {
+          style: function() {
+            if (hatchPattern) {
+              return {
+                color: "#28a745",
+                weight: 1,
+                fillPattern: hatchPattern,
+                fillOpacity: 1
+              };
+            }
+            return {
+              color: "#28a745",
+              weight: 1,
+              fillColor: "#b9e7c3",
+              fillOpacity: 0.35
+            };
+          }
+        });
+      })
+      .catch(err => console.log("Habitat not loaded:", err));
+
+    document.getElementById("habitatToggle").addEventListener("change", function() {
+      if (!habitatLayer) return;
+
+      if (this.checked) {
+        habitatLayer.addTo(map);
+        keepOverlaysOnTop();
+      } else {
+        map.removeLayer(habitatLayer);
+      }
+    });
+
+    document.getElementById("layerType").addEventListener("change", refreshRaster);
     document.getElementById("depth").addEventListener("change", refreshRaster);
     document.getElementById("month").addEventListener("change", refreshRaster);
+
+    updatePanelVisibility();
+    refreshRaster();
   </script>
 </body>
 </html>
