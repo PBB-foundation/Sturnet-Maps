@@ -76,13 +76,14 @@
       border-radius: 10px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.15);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      width: 240px;
+      width: 255px;
     }
 
     .legend-title {
       font-size: 13px;
       margin: 0 0 8px 0;
       font-weight: 600;
+      line-height: 1.3;
     }
 
     .bar {
@@ -156,6 +157,12 @@
       );
     }
 
+    .salinity-bar {
+      background: linear-gradient(90deg,
+        #313695, #4575b4, #74add1, #abd9e9, #e0f3f8, #fee090, #fdae61, #f46d43, #d73027
+      );
+    }
+
     .bathy-bar {
       background: linear-gradient(90deg,
         #081d58, #253494, #225ea8, #1d91c0, #41b6c4, #7fcdbb, #c7e9b4, #edf8b1
@@ -174,6 +181,7 @@
       <label for="layerType">Layer</label>
       <select id="layerType">
         <option value="temperature" selected>Temperature</option>
+        <option value="salinity">Salinity</option>
         <option value="bathymetry">Bathymetry</option>
       </select>
     </div>
@@ -192,6 +200,9 @@
         <option value="february" selected>February 2025</option>
         <option value="march">March 2025</option>
         <option value="april">April 2025</option>
+        <option value="september">September 2025</option>
+        <option value="october">October 2025</option>
+        <option value="november">November 2025</option>
       </select>
     </div>
 
@@ -204,20 +215,20 @@
   </div>
 
   <div class="legend" id="legend">
-    <div class="legend-title" id="legendTitle">Temperature (°C)</div>
+    <div class="legend-title" id="legendTitle">Surface temperature (February 2025)</div>
 
     <div class="bar temp-bar" id="legendBar"></div>
 
     <div class="legend-labels">
-      <span id="minV">4.00</span>
-      <span id="maxV">11.00</span>
+      <span id="minV">4.15</span>
+      <span id="maxV">9.08</span>
     </div>
 
     <div class="legend-divider"></div>
 
     <div class="legend-line-item">
       <span class="legend-line-symbol"></span>
-      <span>Izobate_AOI</span>
+      <span>Isobaths</span>
     </div>
 
     <div class="legend-fill-item">
@@ -244,14 +255,61 @@
     const TILE_MAX_ZOOM = 12;
     const TILE_ROOT = "sturnet_database/tiles";
 
-    const depthRanges = {
-      surface: { min: 4.00, max: 11.00 },
-      bottom:  { min: 3.80, max: 11.30 }
+    const temperatureRanges = {
+      surface: {
+        february:  { min: 4.15,  max: 9.08 },
+        march:     { min: 6.34,  max: 9.08 },
+        april:     { min: 9.82,  max: 11.46 },
+        september: { min: 22.20, max: 23.79 },
+        october:   { min: 15.90, max: 18.68 },
+        november:  { min: 13.76, max: 16.20 }
+      },
+      bottom: {
+        february:  { min: 3.80,  max: 9.26 },
+        march:     { min: 5.50,  max: 8.96 },
+        april:     { min: 6.95,  max: 11.30 },
+        september: { min: 8.81,  max: 23.86 },
+        october:   { min: 8.74,  max: 18.56 },
+        november:  { min: 8.58,  max: 15.31 }
+      }
+    };
+
+    const salinityRanges = {
+      surface: {
+        february:  { min: 7.23, max: 18.40 },
+        march:     { min: 6.64, max: 18.45 },
+        april:     { min: 4.71, max: 18.67 },
+        september: { min: 7.59, max: 18.90 },
+        october:   { min: 8.12, max: 18.62 },
+        november:  { min: 8.11, max: 18.74 }
+      },
+      bottom: {
+        february:  { min: 7.23, max: 18.40 },
+        march:     { min: 6.64, max: 18.45 },
+        april:     { min: 4.71, max: 18.67 },
+        september: { min: 7.59, max: 18.90 },
+        october:   { min: 8.12, max: 18.62 },
+        november:  { min: 8.11, max: 18.74 }
+      }
     };
 
     const bathyRange = {
       min: -1347.78,
       max: 1.56713
+    };
+
+    const monthLabels = {
+      february: "February 2025",
+      march: "March 2025",
+      april: "April 2025",
+      september: "September 2025",
+      october: "October 2025",
+      november: "November 2025"
+    };
+
+    const depthLabels = {
+      surface: "Surface",
+      bottom: "Bottom"
     };
 
     let currentRaster = null;
@@ -274,14 +332,32 @@
       console.warn("Leaflet.pattern plugin did not load. Habitat will use plain fill.");
     }
 
-    function updateLegendForTemperature(depth) {
-      document.getElementById("legendTitle").textContent = "Temperature (°C)";
-      document.getElementById("minV").textContent = depthRanges[depth].min.toFixed(2);
-      document.getElementById("maxV").textContent = depthRanges[depth].max.toFixed(2);
+    function updateLegendForTemperature(depth, month) {
+      const range = temperatureRanges[depth][month];
+
+      document.getElementById("legendTitle").textContent =
+        `${depthLabels[depth]} temperature (${monthLabels[month]})`;
+
+      document.getElementById("minV").textContent = range.min.toFixed(2);
+      document.getElementById("maxV").textContent = range.max.toFixed(2);
 
       const legendBar = document.getElementById("legendBar");
-      legendBar.classList.remove("bathy-bar");
+      legendBar.classList.remove("salinity-bar", "bathy-bar");
       legendBar.classList.add("temp-bar");
+    }
+
+    function updateLegendForSalinity(depth, month) {
+      const range = salinityRanges[depth][month];
+
+      document.getElementById("legendTitle").textContent =
+        `${depthLabels[depth]} salinity (${monthLabels[month]})`;
+
+      document.getElementById("minV").textContent = range.min.toFixed(2);
+      document.getElementById("maxV").textContent = range.max.toFixed(2);
+
+      const legendBar = document.getElementById("legendBar");
+      legendBar.classList.remove("temp-bar", "bathy-bar");
+      legendBar.classList.add("salinity-bar");
     }
 
     function updateLegendForBathymetry() {
@@ -290,12 +366,22 @@
       document.getElementById("maxV").textContent = bathyRange.max.toFixed(2);
 
       const legendBar = document.getElementById("legendBar");
-      legendBar.classList.remove("temp-bar");
+      legendBar.classList.remove("temp-bar", "salinity-bar");
       legendBar.classList.add("bathy-bar");
     }
 
     function makeTemperatureLayer(depth, month) {
       const url = `${TILE_ROOT}/${depth}/${month}/{z}/{x}/{y}.png`;
+      return L.tileLayer(url, {
+        minZoom: TILE_MIN_ZOOM,
+        maxZoom: TILE_MAX_ZOOM,
+        tms: false,
+        opacity: 0.85
+      });
+    }
+
+    function makeSalinityLayer(depth, month) {
+      const url = `${TILE_ROOT}/salinity/${depth}/${month}/{z}/{x}/{y}.png`;
       return L.tileLayer(url, {
         minZoom: TILE_MIN_ZOOM,
         maxZoom: TILE_MAX_ZOOM,
@@ -320,14 +406,14 @@
       const monthRow = document.getElementById("monthRow");
       const panelHint = document.getElementById("panelHint");
 
-      if (layerType === "temperature") {
-        depthRow.classList.remove("hidden");
-        monthRow.classList.remove("hidden");
-        panelHint.textContent = "Select depth and month.";
-      } else {
+      if (layerType === "bathymetry") {
         depthRow.classList.add("hidden");
         monthRow.classList.add("hidden");
         panelHint.textContent = "Bathymetry layer is displayed.";
+      } else {
+        depthRow.classList.remove("hidden");
+        monthRow.classList.remove("hidden");
+        panelHint.textContent = "Select depth and month.";
       }
     }
 
@@ -347,7 +433,10 @@
 
       if (layerType === "temperature") {
         currentRaster = makeTemperatureLayer(depth, month);
-        updateLegendForTemperature(depth);
+        updateLegendForTemperature(depth, month);
+      } else if (layerType === "salinity") {
+        currentRaster = makeSalinityLayer(depth, month);
+        updateLegendForSalinity(depth, month);
       } else {
         currentRaster = makeBathymetryLayer();
         updateLegendForBathymetry();
