@@ -163,6 +163,18 @@
       );
     }
 
+.oxygen-bar {
+  background: linear-gradient(90deg,
+    #f2efe6,   
+    #c7e9b4,   
+    #7fcdbb,   
+    #41b6c4,   
+    #fee08b,   
+    #fdae61,   
+    #f46d43,   
+    #d73027    
+  );
+}
     .bathy-bar {
       background: linear-gradient(90deg,
         #081d58, #253494, #225ea8, #1d91c0, #41b6c4, #7fcdbb, #c7e9b4, #edf8b1
@@ -182,6 +194,7 @@
       <select id="layerType">
         <option value="temperature" selected>Temperature</option>
         <option value="salinity">Salinity</option>
+        <option value="dissolved_oxygen">Dissolved oxygen</option>
         <option value="bathymetry">Bathymetry</option>
       </select>
     </div>
@@ -215,7 +228,7 @@
   </div>
 
   <div class="legend" id="legend">
-    <div class="legend-title" id="legendTitle">Surface temperature (February 2025)</div>
+    <div class="legend-title" id="legendTitle">Surface temperature (°C) - February 2025</div>
 
     <div class="bar temp-bar" id="legendBar"></div>
 
@@ -293,9 +306,15 @@
       }
     };
 
+    const dissolvedOxygenRanges = {
+      february: { min: 294.17, max: 393.17 },
+      march:    { min: 303.49, max: 387.90 },
+      april:    { min: 295.29, max: 478.93 }
+    };
+
     const bathyRange = {
       min: -1347.78,
-      max: 1.56713
+      max: 1.57
     };
 
     const monthLabels = {
@@ -336,13 +355,13 @@
       const range = temperatureRanges[depth][month];
 
       document.getElementById("legendTitle").textContent =
-        `${depthLabels[depth]} temperature (${monthLabels[month]})`;
+        `${depthLabels[depth]} temperature (°C) - ${monthLabels[month]}`;
 
       document.getElementById("minV").textContent = range.min.toFixed(2);
       document.getElementById("maxV").textContent = range.max.toFixed(2);
 
       const legendBar = document.getElementById("legendBar");
-      legendBar.classList.remove("salinity-bar", "bathy-bar");
+      legendBar.classList.remove("salinity-bar", "oxygen-bar", "bathy-bar");
       legendBar.classList.add("temp-bar");
     }
 
@@ -350,14 +369,28 @@
       const range = salinityRanges[depth][month];
 
       document.getElementById("legendTitle").textContent =
-        `${depthLabels[depth]} salinity (${monthLabels[month]})`;
+        `${depthLabels[depth]} salinity (‰) - ${monthLabels[month]}`;
 
       document.getElementById("minV").textContent = range.min.toFixed(2);
       document.getElementById("maxV").textContent = range.max.toFixed(2);
 
       const legendBar = document.getElementById("legendBar");
-      legendBar.classList.remove("temp-bar", "bathy-bar");
+      legendBar.classList.remove("temp-bar", "oxygen-bar", "bathy-bar");
       legendBar.classList.add("salinity-bar");
+    }
+
+    function updateLegendForDissolvedOxygen(month) {
+      const range = dissolvedOxygenRanges[month];
+
+      document.getElementById("legendTitle").textContent =
+        `Dissolved oxygen (mmol/m3) - ${monthLabels[month]}`;
+
+      document.getElementById("minV").textContent = range.min.toFixed(2);
+      document.getElementById("maxV").textContent = range.max.toFixed(2);
+
+      const legendBar = document.getElementById("legendBar");
+      legendBar.classList.remove("temp-bar", "salinity-bar", "bathy-bar");
+      legendBar.classList.add("oxygen-bar");
     }
 
     function updateLegendForBathymetry() {
@@ -366,7 +399,7 @@
       document.getElementById("maxV").textContent = bathyRange.max.toFixed(2);
 
       const legendBar = document.getElementById("legendBar");
-      legendBar.classList.remove("temp-bar", "salinity-bar");
+      legendBar.classList.remove("temp-bar", "salinity-bar", "oxygen-bar");
       legendBar.classList.add("bathy-bar");
     }
 
@@ -390,6 +423,16 @@
       });
     }
 
+    function makeDissolvedOxygenLayer(month) {
+      const url = `${TILE_ROOT}/dissolved_oxygen/${month}/{z}/{x}/{y}.png`;
+      return L.tileLayer(url, {
+        minZoom: TILE_MIN_ZOOM,
+        maxZoom: TILE_MAX_ZOOM,
+        tms: false,
+        opacity: 0.85
+      });
+    }
+
     function makeBathymetryLayer() {
       const url = `${TILE_ROOT}/bathymetry/{z}/{x}/{y}.png`;
       return L.tileLayer(url, {
@@ -398,6 +441,29 @@
         tms: false,
         opacity: 0.85
       });
+    }
+
+    function updateMonthOptionsForLayer(layerType) {
+      const monthSelect = document.getElementById("month");
+      const currentValue = monthSelect.value;
+
+      let allowedMonths = [];
+
+      if (layerType === "dissolved_oxygen") {
+        allowedMonths = ["february", "march", "april"];
+      } else if (layerType === "bathymetry") {
+        allowedMonths = [];
+      } else {
+        allowedMonths = ["february", "march", "april", "september", "october", "november"];
+      }
+
+      Array.from(monthSelect.options).forEach(option => {
+        option.hidden = !allowedMonths.includes(option.value);
+      });
+
+      if (allowedMonths.length && !allowedMonths.includes(currentValue)) {
+        monthSelect.value = allowedMonths[0];
+      }
     }
 
     function updatePanelVisibility() {
@@ -410,6 +476,10 @@
         depthRow.classList.add("hidden");
         monthRow.classList.add("hidden");
         panelHint.textContent = "Bathymetry layer is displayed.";
+      } else if (layerType === "dissolved_oxygen") {
+        depthRow.classList.add("hidden");
+        monthRow.classList.remove("hidden");
+        panelHint.textContent = "Select month for dissolved oxygen.";
       } else {
         depthRow.classList.remove("hidden");
         monthRow.classList.remove("hidden");
@@ -427,16 +497,23 @@
       const depth = document.getElementById("depth").value;
       const month = document.getElementById("month").value;
 
+      updateMonthOptionsForLayer(layerType);
+
+      const finalMonth = document.getElementById("month").value;
+
       if (currentRaster) {
         map.removeLayer(currentRaster);
       }
 
       if (layerType === "temperature") {
-        currentRaster = makeTemperatureLayer(depth, month);
-        updateLegendForTemperature(depth, month);
+        currentRaster = makeTemperatureLayer(depth, finalMonth);
+        updateLegendForTemperature(depth, finalMonth);
       } else if (layerType === "salinity") {
-        currentRaster = makeSalinityLayer(depth, month);
-        updateLegendForSalinity(depth, month);
+        currentRaster = makeSalinityLayer(depth, finalMonth);
+        updateLegendForSalinity(depth, finalMonth);
+      } else if (layerType === "dissolved_oxygen") {
+        currentRaster = makeDissolvedOxygenLayer(finalMonth);
+        updateLegendForDissolvedOxygen(finalMonth);
       } else {
         currentRaster = makeBathymetryLayer();
         updateLegendForBathymetry();
