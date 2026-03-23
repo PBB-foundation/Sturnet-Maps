@@ -232,12 +232,12 @@
 
     .sound-toggle {
   position: absolute;
-  bottom: 20px;
+  bottom: 28px;
   right: 12px;
   z-index: 1000;
 
-  width: 44px;
-  height: 44px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   border: none;
 
@@ -251,6 +251,7 @@
   justify-content: center;
   align-items: center;
 }
+
   </style>
 </head>
 
@@ -327,10 +328,9 @@
   </div>
 
   <button id="soundToggle" class="sound-toggle">🔇</button>
-
-    <audio id="seaSound" loop>
+  <audio id="seaSound" loop>
     <source src="freesound_community-seagulls-by-the-sea-7042_new.mp3" type="audio/mpeg">
-    </audio>
+  </audio>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
@@ -374,6 +374,12 @@
         maxZoom: 19,
         attribution: "&copy; OpenStreetMap contributors"
       }).addTo(map);
+
+      map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet</a>');
+
+      map.attributionControl.addAttribution(
+        'Sound: <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=7042" target="_blank" rel="noopener noreferrer">freesound_community</a> / <a href="https://pixabay.com/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=7042" target="_blank" rel="noopener noreferrer">Pixabay</a>'
+      );
 
       L.control.scale({ metric: true, imperial: false }).addTo(map);
 
