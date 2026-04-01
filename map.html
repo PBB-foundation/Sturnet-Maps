@@ -201,6 +201,26 @@
       );
     }
 
+    /* .current-bar {
+      background: linear-gradient(90deg,
+        #f7fbff, #deebf7, #c6dbef, #9ecae1,
+        #6baed6, #4292c6, #2171b5, #08519c, #08306b
+      );
+    } */
+
+    .current-bar {
+      background: linear-gradient(90deg,
+        #2c7bb6,
+        #5aa7d8,
+        #91d3c2,
+        #d9ef8b,
+        #fee08b,
+        #fdae61,
+        #f46d43,
+        #d73027
+      );
+    }
+
     .bathy-bar {
       background: linear-gradient(90deg,
         #081d58, #253494, #225ea8, #1d91c0, #41b6c4, #7fcdbb, #c7e9b4, #edf8b1
@@ -272,6 +292,7 @@
         <option value="temperature" selected>Temperature</option>
         <option value="salinity">Salinity</option>
         <option value="dissolved_oxygen">Dissolved oxygen</option>
+        <option value="current">Current</option>
         <option value="bathymetry">Bathymetry</option>
       </select>
     </div>
@@ -438,6 +459,15 @@
         november:  { min: 262.44, max: 320.22 }
       };
 
+        const currentRanges = {
+        february:  { min: 0.0010, max: 0.4100 },
+        march:     { min: 0.0003, max: 0.2100 },
+        april:     { min: 0.0010, max: 0.2000 },
+        september: { min: 0.0020, max: 0.3480 },
+        october:   { min: 0.0001, max: 0.2130 },
+        november:  { min: 0.0008, max: 0.1840 }
+      };
+
       const bathyRange = {
         min: -1347.78,
         max: 1.57
@@ -512,6 +542,18 @@
         legendBar.classList.add("oxygen-bar");
       }
 
+      function updateLegendForCurrent(month) {
+        const range = currentRanges[month];
+        document.getElementById("legendTitle").textContent =
+          `Current velocity (m/s) - ${monthLabels[month]}`;
+        document.getElementById("minV").textContent = range.min.toFixed(4);
+        document.getElementById("maxV").textContent = range.max.toFixed(3);
+
+        const legendBar = document.getElementById("legendBar");
+        legendBar.classList.remove("temp-bar", "salinity-bar", "oxygen-bar", "bathy-bar");
+        legendBar.classList.add("current-bar");
+      }
+
       function updateLegendForBathymetry() {
         document.getElementById("legendTitle").textContent = "Bathymetry (m)";
         document.getElementById("minV").textContent = bathyRange.min.toFixed(2);
@@ -542,6 +584,15 @@
 
       function makeDissolvedOxygenLayer(month) {
         return L.tileLayer(`${TILE_ROOT}/dissolved_oxygen/${month}/{z}/{x}/{y}.png`, {
+          minZoom: TILE_MIN_ZOOM,
+          maxZoom: TILE_MAX_ZOOM,
+          tms: false,
+          opacity: 0.85
+        });
+      }
+
+      function makeCurrentLayer(month) {
+        return L.tileLayer(`${TILE_ROOT}/current/${month}/{z}/{x}/{y}.png`, {
           minZoom: TILE_MIN_ZOOM,
           maxZoom: TILE_MAX_ZOOM,
           tms: false,
@@ -592,6 +643,10 @@ function updatePanelVisibility() {
     depthRow.style.display = "none";
     monthRow.style.display = "flex";
     panelHint.textContent = "Select month for dissolved oxygen.";
+  } else if (layerType === "current") {
+    depthRow.style.display = "none";
+    monthRow.style.display = "flex";
+    panelHint.textContent = "Select month for current velocity.";
   } else {
     depthRow.style.display = "flex";
     monthRow.style.display = "flex";
@@ -672,6 +727,11 @@ function refreshRaster() {
     const finalMonth = document.getElementById("month").value;
     currentRaster = makeDissolvedOxygenLayer(finalMonth);
     updateLegendForDissolvedOxygen(finalMonth);
+  } else if (layerType === "current") {
+    updateMonthOptionsForLayer(layerType);
+    const finalMonth = document.getElementById("month").value;
+    currentRaster = makeCurrentLayer(finalMonth);
+    updateLegendForCurrent(finalMonth);
   } else if (layerType === "salinity") {
     updateMonthOptionsForLayer(layerType);
     const depth = document.getElementById("depth").value;
