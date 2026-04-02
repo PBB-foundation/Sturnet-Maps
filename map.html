@@ -111,6 +111,23 @@
       line-height: 1.3;
     }
 
+    .legend-buoy {
+      display: inline-block;
+      object-fit: contain;
+    }
+
+    /* Coastal = tall */
+    .legend-buoy.coastal {
+      height: 40px;
+      width: auto;
+    }
+
+    /* Offshore = compact */
+    .legend-buoy.offshore {
+      height: 28px;
+      width: auto;
+    }
+
     .bar {
       height: 10px;
       border-radius: 6px;
@@ -272,6 +289,155 @@
   align-items: center;
 }
 
+
+
+/* ---------- Base desktop sizes ---------- */
+.panel {
+  width: 300px;
+  max-width: none;
+}
+
+.legend {
+  width: 255px;
+  max-width: none;
+}
+
+.top-right {
+  max-width: none;
+}
+
+#userEmail {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Keep Leaflet credits neat */
+.leaflet-control-attribution {
+  font-size: 11px;
+  /* max-width: 46vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; */
+}
+
+/* ---------- Mobile: keep same layout, scale everything down ---------- */
+@media (max-width: 640px) {
+  .panel,
+  .legend,
+  .top-right,
+  .sound-toggle,
+  .leaflet-control-attribution,
+  .leaflet-control-scale {
+    transform-origin: top left;
+  }
+
+  .panel {
+    top: 10px;
+    left: 10px;
+    width: 300px;
+    transform: scale(0.72);
+  }
+
+  .top-right {
+    top: 10px;
+    right: 10px;
+    left: auto;
+    width: auto;
+    transform-origin: top right;
+    transform: scale(0.72);
+  }
+
+  .legend {
+    left: 10px;
+    bottom: 10px;
+    width: 255px;
+    transform-origin: bottom left;
+    transform: scale(0.72);
+  }
+
+  .sound-toggle {
+    right: 10px;
+    bottom: 10px;
+    transform-origin: bottom right;
+    transform: scale(0.82);
+  }
+
+  .leaflet-control-attribution {
+    transform-origin: bottom right;
+    transform: scale(0.78);
+    margin: 0 6px 6px 0 !important;
+    max-width: 42vw;
+  }
+
+  .leaflet-control-scale {
+    transform-origin: bottom left;
+    transform: scale(0.78);
+    margin: 0 0 6px 6px !important;
+  }
+
+  .legend-buoy.coastal {
+    height: 34px;
+  }
+
+  .legend-buoy.offshore {
+    height: 24px;
+  }
+
+  .isobath-text div {
+    font-size: 10px;
+  }
+}
+
+/* Smaller phones */
+@media (max-width: 420px) {
+  .panel {
+    transform: scale(0.64);
+  }
+
+  .top-right {
+    transform: scale(0.64);
+  }
+
+  .legend {
+    transform: scale(0.64);
+  }
+
+  .sound-toggle {
+    transform: scale(0.76);
+  }
+
+  .leaflet-control-attribution,
+  .leaflet-control-scale {
+    transform: scale(0.72);
+  }
+}
+
+.leaflet-control-attribution {
+  font-size: 11px;
+}
+
+@media (max-width: 640px) {
+  .leaflet-control-attribution {
+    transform-origin: bottom right;
+    transform: scale(0.78);
+    margin: 0 6px 6px 0 !important;
+
+    max-width: none;          /* remove trimming */
+    white-space: normal;      /* allow wrapping */
+    overflow: visible;        /* allow full text */
+    text-overflow: clip;      /* no dots */
+    line-height: 1.2;
+  }
+
+  .leaflet-bottom.leaflet-right {
+    right: 6px;
+    bottom: 4px;
+    max-width: 46vw;
+  }
+}
+
   </style>
 </head>
 
@@ -338,6 +504,16 @@
     <div class="legend-divider"></div>
 
     <div class="legend-line-item">
+      <img src="buoy_coastal.png" class="legend-buoy coastal">
+      <span>Coastal buoy</span>
+    </div>
+
+    <div class="legend-line-item">
+      <img src="buoy_offshore.png" class="legend-buoy offshore">
+      <span>Offshore buoy</span>
+    </div>
+
+    <div class="legend-line-item">
       <span class="legend-line-symbol"></span>
       <span>Isobaths</span>
     </div>
@@ -391,6 +567,14 @@
     function initMap() {
       const map = L.map("map").setView([44.2, 29.4], 8);
 
+      function getBuoySize() {
+        const z = map.getZoom();
+
+        if (z <= 7) return 25;
+        if (z <= 9) return 35;
+        return 50;
+      }
+
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: "&copy; OpenStreetMap contributors"
@@ -400,6 +584,10 @@
 
       map.attributionControl.addAttribution(
         'Sound: <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=7042" target="_blank" rel="noopener noreferrer">freesound_community</a> / <a href="https://pixabay.com/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=7042" target="_blank" rel="noopener noreferrer">Pixabay</a>'
+      );
+
+      map.attributionControl.addAttribution(
+        'Buoy data: <a href="https://www.euxinus.eu/emso_euxinus_network.html" target="_blank" rel="noopener noreferrer">EMSO Euxinus Network</a>'
       );
 
       L.control.scale({ metric: true, imperial: false }).addTo(map);
@@ -828,6 +1016,51 @@ function refreshRaster() {
         })
         .catch(err => console.log("Habitat not loaded:", err));
 
+
+
+      const offshoreBuoyIcon = L.icon({
+        iconUrl: "buoy_offshore.png",
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -16]
+      });
+
+      const coastalBuoyIcon = L.icon({
+        iconUrl: "buoy_coastal.png",
+        iconSize: [40, 70],
+        iconAnchor: [20, 65],
+        popupAnchor: [0, -36]
+      });
+
+      fetch("buoys.geojson")
+        .then(res => {
+          if (!res.ok) throw new Error(`Buoys fetch failed: ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          buoyLayer = L.geoJSON(data, {
+            pointToLayer: function (feature, latlng) {
+              const type = (feature.properties?.type || "").toLowerCase();
+
+              const icon = type === "coastal"
+                ? coastalBuoyIcon
+                : offshoreBuoyIcon;
+
+              return L.marker(latlng, { icon });
+            },
+            onEachFeature: function (feature, layer) {
+              const props = feature.properties || {};
+              const name = props.name || "Buoy";
+              const type = props.type || "unknown";
+              layer.bindPopup(`<b>${name}</b><br>Type: ${type}`);
+            }
+          }).addTo(map);
+
+          keepOverlaysOnTop();
+        })
+        .catch(err => console.log("Buoys not loaded:", err));
+
+
       document.getElementById("habitatToggle").addEventListener("change", function() {
         if (!habitatLayer) return;
 
@@ -838,6 +1071,7 @@ function refreshRaster() {
           map.removeLayer(habitatLayer);
         }
       });
+
 
       
 document.getElementById("layerType").addEventListener("change", function () {

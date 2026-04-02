@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Constanta Coastal Buoy", "type": "coastal" },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [28.678300, 44.225833]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Sulina Coastal Buoy", "type": "coastal" },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [29.782667, 45.114167]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Mangalia Coastal Buoy", "type": "coastal" },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [28.606983, 43.810100]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "EUXRoOB01 Offshore Buoy", "type": "offshore" },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [30.764300, 44.706117]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "EUXRoOB02 Offshore Buoy", "type": "offshore" },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [30.420750, 44.325100]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "EUXRoOB03 Offshore Buoy", "type": "offshore" },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [29.927600, 43.953533]
+      }
+    }
+  ]
+}
