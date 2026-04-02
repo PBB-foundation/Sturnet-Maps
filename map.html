@@ -629,12 +629,7 @@
           november:  { min: 8.11, max: 18.74 }
         },
         bottom: {
-          february:  { min: 7.23, max: 18.40 },
-          march:     { min: 6.64, max: 18.45 },
-          april:     { min: 4.71, max: 18.67 },
-          september: { min: 7.59, max: 18.90 },
-          october:   { min: 8.12, max: 18.62 },
-          november:  { min: 8.11, max: 18.74 }
+          default:   { min: 13.55, max: 22.03 }
         }
       };
 
@@ -706,15 +701,33 @@
         legendBar.classList.add("temp-bar");
       }
 
+      // function updateLegendForSalinity(depth, month) {
+      //   const range = salinityRanges[depth][month];
+      //   document.getElementById("legendTitle").textContent =
+      //     `${depthLabels[depth]} salinity (‰) - ${monthLabels[month]}`;
+      //   document.getElementById("minV").textContent = range.min.toFixed(2);
+      //   document.getElementById("maxV").textContent = range.max.toFixed(2);
+
+      //   const legendBar = document.getElementById("legendBar");
+      //   legendBar.classList.remove("temp-bar", "oxygen-bar", "bathy-bar");
+      //   legendBar.classList.add("salinity-bar");
+      // }
+
       function updateLegendForSalinity(depth, month) {
-        const range = salinityRanges[depth][month];
-        document.getElementById("legendTitle").textContent =
-          `${depthLabels[depth]} salinity (‰) - ${monthLabels[month]}`;
+        const key = depth === "bottom" ? "default" : month;
+        const range = salinityRanges[depth][key];
+
+        const titleText =
+          depth === "bottom"
+            ? `${depthLabels[depth]} salinity (‰)`
+            : `${depthLabels[depth]} salinity (‰) - ${monthLabels[month]}`;
+
+        document.getElementById("legendTitle").textContent = titleText;
         document.getElementById("minV").textContent = range.min.toFixed(2);
         document.getElementById("maxV").textContent = range.max.toFixed(2);
 
         const legendBar = document.getElementById("legendBar");
-        legendBar.classList.remove("temp-bar", "oxygen-bar", "bathy-bar");
+        legendBar.classList.remove("temp-bar", "oxygen-bar", "bathy-bar", "current-bar");
         legendBar.classList.add("salinity-bar");
       }
 
@@ -761,8 +774,21 @@
         });
       }
 
+      // function makeSalinityLayer(depth, month) {
+      //   return L.tileLayer(`${TILE_ROOT}/salinity/${depth}/${month}/{z}/{x}/{y}.png`, {
+      //     minZoom: TILE_MIN_ZOOM,
+      //     maxZoom: TILE_MAX_ZOOM,
+      //     tms: false,
+      //     opacity: 0.85
+      //   });
+      // }
       function makeSalinityLayer(depth, month) {
-        return L.tileLayer(`${TILE_ROOT}/salinity/${depth}/${month}/{z}/{x}/{y}.png`, {
+        const tilePath =
+          depth === "bottom"
+            ? `${TILE_ROOT}/salinity/bottom/default/{z}/{x}/{y}.png`
+            : `${TILE_ROOT}/salinity/surface/${month}/{z}/{x}/{y}.png`;
+
+        return L.tileLayer(tilePath, {
           minZoom: TILE_MIN_ZOOM,
           maxZoom: TILE_MAX_ZOOM,
           tms: false,
@@ -819,6 +845,7 @@
 
 function updatePanelVisibility() {
   const layerType = document.getElementById("layerType").value;
+  const depth = document.getElementById("depth").value;
   const depthRow = document.getElementById("depthRow");
   const monthRow = document.getElementById("monthRow");
   const panelHint = document.getElementById("panelHint");
@@ -835,6 +862,16 @@ function updatePanelVisibility() {
     depthRow.style.display = "none";
     monthRow.style.display = "flex";
     panelHint.textContent = "Select month for current velocity.";
+  } else if (layerType === "salinity") {
+    depthRow.style.display = "flex";
+
+    if (depth === "bottom") {
+      monthRow.style.display = "none";
+      panelHint.textContent = "Bottom salinity has one fixed map.";
+    } else {
+      monthRow.style.display = "flex";
+      panelHint.textContent = "Select depth and month.";
+    }
   } else {
     depthRow.style.display = "flex";
     monthRow.style.display = "flex";
@@ -921,12 +958,13 @@ function refreshRaster() {
     currentRaster = makeCurrentLayer(finalMonth);
     updateLegendForCurrent(finalMonth);
   } else if (layerType === "salinity") {
-    updateMonthOptionsForLayer(layerType);
-    const depth = document.getElementById("depth").value;
-    const finalMonth = document.getElementById("month").value;
-    currentRaster = makeSalinityLayer(depth, finalMonth);
-    updateLegendForSalinity(depth, finalMonth);
-  } else {
+  updateMonthOptionsForLayer(layerType);
+  const depth = document.getElementById("depth").value;
+  const finalMonth = document.getElementById("month").value;
+
+  currentRaster = makeSalinityLayer(depth, finalMonth);
+  updateLegendForSalinity(depth, finalMonth);
+} else {
     updateMonthOptionsForLayer(layerType);
     const depth = document.getElementById("depth").value;
     const finalMonth = document.getElementById("month").value;
