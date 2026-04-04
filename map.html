@@ -116,6 +116,41 @@
       object-fit: contain;
     }
 
+    /* leged boys small mail */
+
+        .buoy-popup {
+      min-width: 120px;
+    }
+
+    .buoy-popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .buoy-popup-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      text-decoration: none;
+      border: 1px solid #cfcfcf;
+      border-radius: 6px;
+      background: #f8f8f8;
+      font-size: 14px;
+      line-height: 1;
+      color: #17384f;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .buoy-popup-link:hover {
+      background: #eaf3f8;
+      border-color: #17384f;
+    }
+
     /* Coastal = tall */
     .legend-buoy.coastal {
       height: 40px;
@@ -240,7 +275,14 @@
 
     .bathy-bar {
       background: linear-gradient(90deg,
-        #081d58, #253494, #225ea8, #1d91c0, #41b6c4, #7fcdbb, #c7e9b4, #edf8b1
+        #08306b,
+        #08519c,
+        #2171b5,
+        #4292c6,
+        #6baed6,
+        #9ecae1,
+        #c6dbef,
+        #deebf7
       );
     }
 
@@ -652,8 +694,8 @@
       };
 
       const bathyRange = {
-        min: -1347.78,
-        max: 1.57
+        min: -1347,
+        max: 0
       };
 
       const monthLabels = {
@@ -1086,12 +1128,29 @@ function refreshRaster() {
 
               return L.marker(latlng, { icon });
             },
-            onEachFeature: function (feature, layer) {
-              const props = feature.properties || {};
-              const name = props.name || "Buoy";
-              const type = props.type || "unknown";
-              layer.bindPopup(`<b>${name}</b><br>Type: ${type}`);
-            }
+onEachFeature: function (feature, layer) {
+  const props = feature.properties || {};
+  const name = props.name || "Buoy";
+  const type = props.type || "unknown";
+  const infoUrl = "https://www.euxinus.eu/emso_euxinus_network.html";
+
+  layer.bindPopup(`
+    <div class="buoy-popup">
+      <div class="buoy-popup-header">
+        <strong>${name}</strong>
+        <a
+          href="${infoUrl}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="buoy-popup-link"
+          title="Open EMSO-EUXINUS page"
+          aria-label="Open EMSO-EUXINUS page"
+        >&#9993;</a>
+      </div>
+      <div>Type: ${type}</div>
+    </div>
+  `);
+}
           }).addTo(map);
 
           keepOverlaysOnTop();
