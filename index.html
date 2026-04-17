@@ -73,10 +73,10 @@
       font-size: 22px;
       cursor: pointer;
       display: flex;
-      /* place-items: center; */
       justify-content: center;
       align-items: center;
       box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+      transition: transform 0.15s ease;
     }
 
     .sound-toggle:hover {
@@ -167,6 +167,12 @@
       transform: translateY(-1px);
     }
 
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     .primary-btn {
       background: #ffffff;
       color: #0d2a3f;
@@ -251,7 +257,6 @@
     <div class="actions">
       <button id="loginBtn" class="primary-btn">Login</button>
       <button id="signupBtn" class="secondary-btn">Create account</button>
-      <button id="googleBtn" class="secondary-btn">Continue with Google</button>
     </div>
 
     <div class="switch-text">
@@ -286,9 +291,7 @@
       getAuth,
       onAuthStateChanged,
       signInWithEmailAndPassword,
-      createUserWithEmailAndPassword,
-      signInWithPopup,
-      GoogleAuthProvider
+      createUserWithEmailAndPassword
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
     const firebaseConfig = {
@@ -303,14 +306,12 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
 
     const emailEl = document.getElementById("email");
     const passwordEl = document.getElementById("password");
     const messageEl = document.getElementById("message");
     const loginBtn = document.getElementById("loginBtn");
     const signupBtn = document.getElementById("signupBtn");
-    const googleBtn = document.getElementById("googleBtn");
     const soundToggle = document.getElementById("soundToggle");
     const seaSound = document.getElementById("seaSound");
     const bgVideo = document.getElementById("bgVideo");
@@ -319,6 +320,11 @@
 
     function showMessage(text) {
       messageEl.textContent = text || "";
+    }
+
+    function setButtonsDisabled(disabled) {
+      loginBtn.disabled = disabled;
+      signupBtn.disabled = disabled;
     }
 
     function updateSoundIcon() {
@@ -345,6 +351,31 @@
       soundEnabled = false;
       localStorage.setItem("seaSoundEnabled", "false");
       updateSoundIcon();
+    }
+
+    function getFriendlyErrorMessage(error) {
+      switch (error.code) {
+        case "auth/invalid-email":
+          return "Please enter a valid email address.";
+        case "auth/missing-password":
+          return "Please enter your password.";
+        case "auth/weak-password":
+          return "Password should be at least 6 characters.";
+        case "auth/email-already-in-use":
+          return "This email already has an account. Please log in instead.";
+        case "auth/invalid-credential":
+          return "Invalid email or password. If this is your first time, click Create account.";
+        case "auth/user-not-found":
+          return "No account found for this email. Please create an account first.";
+        case "auth/wrong-password":
+          return "Incorrect password.";
+        case "auth/network-request-failed":
+          return "Network error. Please check your internet connection.";
+        case "auth/too-many-requests":
+          return "Too many attempts. Please wait a moment and try again.";
+        default:
+          return error.message || "Something went wrong. Please try again.";
+      }
     }
 
     soundToggle.addEventListener("click", async () => {
@@ -376,12 +407,17 @@
         return;
       }
 
+      setButtonsDisabled(true);
+
       try {
         showMessage("Logging in...");
         await signInWithEmailAndPassword(auth, email, password);
+        showMessage("Login successful. Redirecting...");
         window.location.href = "map.html";
       } catch (error) {
-        showMessage(error.message);
+        showMessage(getFriendlyErrorMessage(error));
+      } finally {
+        setButtonsDisabled(false);
       }
     });
 
@@ -394,22 +430,22 @@
         return;
       }
 
+      if (password.length < 6) {
+        showMessage("Password must be at least 6 characters.");
+        return;
+      }
+
+      setButtonsDisabled(true);
+
       try {
         showMessage("Creating account...");
         await createUserWithEmailAndPassword(auth, email, password);
+        showMessage("Account created successfully. Redirecting...");
         window.location.href = "map.html";
       } catch (error) {
-        showMessage(error.message);
-      }
-    });
-
-    googleBtn.addEventListener("click", async () => {
-      try {
-        showMessage("Opening Google sign-in...");
-        await signInWithPopup(auth, provider);
-        window.location.href = "map.html";
-      } catch (error) {
-        showMessage(error.message);
+        showMessage(getFriendlyErrorMessage(error));
+      } finally {
+        setButtonsDisabled(false);
       }
     });
   </script>
