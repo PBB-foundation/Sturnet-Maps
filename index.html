@@ -291,17 +291,19 @@
       getAuth,
       onAuthStateChanged,
       signInWithEmailAndPassword,
-      createUserWithEmailAndPassword
+      createUserWithEmailAndPassword,
+      setPersistence,
+      browserLocalPersistence
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAGXHel-iEqb6fAAZHRs-pnVfICMWC0jUc",
-      authDomain: "cpanal-80398.firebaseapp.com",
-      projectId: "cpanal-80398",
-      storageBucket: "cpanal-80398.firebasestorage.app",
-      messagingSenderId: "65568484551",
-      appId: "1:65568484551:web:3f7fe4bb8161e705e462e2",
-      measurementId: "G-815TC6N1Q7"
+      apiKey: "AIzaSyA9QAGa7hG8ZKuJvoAkwVA7v8TOFGmr6R4",
+      authDomain: "sturnet-88b6c.firebaseapp.com",
+      projectId: "sturnet-88b6c",
+      storageBucket: "sturnet-88b6c.firebasestorage.app",
+      messagingSenderId: "280561154718",
+      appId: "1:280561154718:web:f05b1a04f19577281a598f",
+      measurementId: "G-F8HEE8SYXB"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -317,6 +319,8 @@
     const bgVideo = document.getElementById("bgVideo");
 
     let soundEnabled = localStorage.getItem("seaSoundEnabled") === "true";
+    let authChecked = false;
+    let redirecting = false;
 
     function showMessage(text) {
       messageEl.textContent = text || "";
@@ -353,6 +357,12 @@
       updateSoundIcon();
     }
 
+    function goToMap() {
+      if (redirecting) return;
+      redirecting = true;
+      window.location.replace("map.html");
+    }
+
     function getFriendlyErrorMessage(error) {
       switch (error.code) {
         case "auth/invalid-email":
@@ -373,6 +383,8 @@
           return "Network error. Please check your internet connection.";
         case "auth/too-many-requests":
           return "Too many attempts. Please wait a moment and try again.";
+        case "auth/configuration-not-found":
+          return "Authentication is not enabled in Firebase yet. Please enable Email/Password in the Firebase console.";
         default:
           return error.message || "Something went wrong. Please try again.";
       }
@@ -392,9 +404,14 @@
 
     updateSoundIcon();
 
+    await setPersistence(auth, browserLocalPersistence);
+
     onAuthStateChanged(auth, (user) => {
+      if (authChecked) return;
+      authChecked = true;
+
       if (user) {
-        window.location.href = "map.html";
+        goToMap();
       }
     });
 
@@ -413,7 +430,7 @@
         showMessage("Logging in...");
         await signInWithEmailAndPassword(auth, email, password);
         showMessage("Login successful. Redirecting...");
-        window.location.href = "map.html";
+        goToMap();
       } catch (error) {
         showMessage(getFriendlyErrorMessage(error));
       } finally {
@@ -441,7 +458,7 @@
         showMessage("Creating account...");
         await createUserWithEmailAndPassword(auth, email, password);
         showMessage("Account created successfully. Redirecting...");
-        window.location.href = "map.html";
+        goToMap();
       } catch (error) {
         showMessage(getFriendlyErrorMessage(error));
       } finally {

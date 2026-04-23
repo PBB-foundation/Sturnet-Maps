@@ -580,30 +580,54 @@
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAGXHel-iEqb6fAAZHRs-pnVfICMWC0jUc",
-      authDomain: "cpanal-80398.firebaseapp.com",
-      projectId: "cpanal-80398",
-      storageBucket: "cpanal-80398.firebasestorage.app",
-      messagingSenderId: "65568484551",
-      appId: "1:65568484551:web:3f7fe4bb8161e705e462e2",
-      measurementId: "G-815TC6N1Q7"
+      apiKey: "AIzaSyA9QAGa7hG8ZKuJvoAkwVA7v8TOFGmr6R4",
+      authDomain: "sturnet-88b6c.firebaseapp.com",
+      projectId: "sturnet-88b6c",
+      storageBucket: "sturnet-88b6c.firebasestorage.app",
+      messagingSenderId: "280561154718",
+      appId: "1:280561154718:web:f05b1a04f19577281a598f",
+      measurementId: "G-F8HEE8SYXB"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
+    let mapInitialized = false;
+    let redirecting = false;
+    let loggingOut = false;
+
+    function goToLogin() {
+      if (redirecting) return;
+      redirecting = true;
+      window.location.replace("index.html");
+    }
+
     onAuthStateChanged(auth, (user) => {
       if (!user) {
-        window.location.href = "index.html";
+        goToLogin();
         return;
       }
+
       document.getElementById("userEmail").textContent = user.email || "Signed in";
-      initMap();
+
+      if (!mapInitialized) {
+        mapInitialized = true;
+        initMap();
+      }
     });
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
-      await signOut(auth);
-      window.location.href = "index.html";
+      if (loggingOut) return;
+
+      loggingOut = true;
+
+      try {
+        await signOut(auth);
+        goToLogin();
+      } catch (error) {
+        console.error("Logout failed:", error);
+        loggingOut = false;
+      }
     });
 
     function initMap() {
