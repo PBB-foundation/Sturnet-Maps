@@ -423,9 +423,9 @@
 
     /* Biotic-pressure mode = bottom-right */
     .legend.is-biotic-mode {
-      left: auto;
-      right: 12px;
-      bottom: 76px;
+      left: 12px;
+      right: auto;
+      bottom: 20px;
 
       width: 275px;
       max-height: calc(100vh - 100px);
@@ -979,7 +979,7 @@
       .legend,
       .legend.is-biotic-mode {
         right: 8px;
-        bottom: 78px;
+        bottom: 70px;
         left: auto;
 
         width: min(280px, calc(100vw - 16px));
@@ -1018,7 +1018,7 @@
 
       .sound-toggle {
         right: 8px;
-        bottom: 82px;
+        bottom: 8px;
 
         transform: scale(0.76);
         transform-origin: bottom right;
@@ -1089,6 +1089,7 @@
       }
 
       .sound-toggle {
+        right: 8px;
         bottom: 8px;
         transform: scale(0.68);
       }
@@ -1223,6 +1224,75 @@
       .map-credit-secondary {
         font-size: 7.5px;
       }
+    }
+
+
+    /* =====================================================
+       COMPACT SPACING ONLY IN BIOTIC-PRESSURE LEGEND
+       ===================================================== */
+
+    .legend.is-biotic-mode .legend-content {
+      padding: 7px 10px;
+    }
+
+    .legend.is-biotic-mode .legend-title {
+      margin-bottom: 5px;
+      line-height: 1.15;
+    }
+
+    .legend.is-biotic-mode .bar {
+      height: 9px;
+    }
+
+    .legend.is-biotic-mode .legend-labels {
+      margin-top: 3px;
+    }
+
+    .legend.is-biotic-mode .legend-divider {
+      margin: 6px 0 5px;
+    }
+
+    .legend.is-biotic-mode .legend-line-item,
+    .legend.is-biotic-mode .legend-fill-item {
+      gap: 6px;
+      margin-top: 3px;
+      line-height: 1.15;
+    }
+
+    .legend.is-biotic-mode .pressure-legend-subtitle {
+      margin: -1px 0 3px;
+      line-height: 1.15;
+    }
+
+    .legend.is-biotic-mode .pressure-legend-item {
+      gap: 6px;
+      margin-top: 2px;
+      line-height: 1.15;
+    }
+
+
+    /* Further compact the buoy/isobath/habitat rows in biotic mode */
+    .legend.is-biotic-mode .legend-buoy.coastal {
+      height: 27px;
+    }
+
+    .legend.is-biotic-mode .legend-buoy.offshore {
+      height: 21px;
+    }
+
+    .legend.is-biotic-mode .legend-line-item,
+    .legend.is-biotic-mode .legend-fill-item {
+      min-height: 22px;
+      margin-top: 1px;
+    }
+
+    .legend.is-biotic-mode .legend-line-symbol {
+      width: 22px;
+    }
+
+    .legend.is-biotic-mode .legend-hatch-symbol {
+      width: 22px;
+      height: 12px;
     }
 
   </style>
@@ -1447,9 +1517,9 @@
         </select>
       </div>
 
-      <div class="context-filter-note">
+      <!-- <div class="context-filter-note">
         Marker colour shows the selected pressure level.
-      </div>
+      </div> -->
     </div>
   </div>
 
@@ -3168,46 +3238,6 @@
             ]
           );
 
-        const pressureRows =
-          Object.keys(pressureConfig)
-            .map(key => {
-              const config =
-                pressureConfig[key];
-
-              const level =
-                getPressureLevel(
-                  key,
-                  area.pressures[key]
-                );
-
-              const value =
-                formatPressurePopupValue(
-                  key,
-                  area.pressures[key]
-                );
-
-              const pressureName =
-                config.scientific
-                  ? `<em>${escapeHtml(config.shortLabel)}</em>`
-                  : `<span>${escapeHtml(config.shortLabel)}</span>`;
-
-              return `
-                <div class="biotic-pressure-row">
-                  <div class="biotic-pressure-name">
-                    ${pressureName}
-                  </div>
-
-                  <div
-                    class="biotic-pressure-value"
-                    style="--status-colour:${level.colour};"
-                  >
-                    ${escapeHtml(value)}
-                  </div>
-                </div>
-              `;
-            })
-            .join("");
-
         return `
           <div
             class="biotic-popup-card"
@@ -3236,16 +3266,6 @@
               <div>
                 ${escapeHtml(area.samplingPeriod || "Not available")}
               </div>
-            </div>
-
-            <div class="biotic-popup-divider"></div>
-
-            <div class="biotic-popup-heading">
-              Biotic pressures
-            </div>
-
-            <div class="biotic-pressure-table">
-              ${pressureRows}
             </div>
           </div>
         `;
