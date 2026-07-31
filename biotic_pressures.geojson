@@ -1,0 +1,188 @@
+{
+  "type": "FeatureCollection",
+  "name": "biotic_pressures",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 1,
+        "water_type": "marine",
+        "sampling_period": "Apr-Nov",
+        "N_melanostomus": "NA",
+        "M_leidyi": "constant",
+        "mycE_gene": "NA",
+        "sxtA_gene": "NA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 2,
+        "water_type": "marine",
+        "sampling_period": "Apr-Nov",
+        "N_melanostomus": "NA",
+        "M_leidyi": "constant",
+        "mycE_gene": "NA",
+        "sxtA_gene": "NA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 3,
+        "water_type": "marine",
+        "sampling_period": "Apr-Nov",
+        "N_melanostomus": "NA",
+        "M_leidyi": "constant",
+        "mycE_gene": "NA",
+        "sxtA_gene": "NA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 4,
+        "water_type": "marine",
+        "sampling_period": "Aug",
+        "N_melanostomus": "NA",
+        "M_leidyi": "constant",
+        "mycE_gene": "NA",
+        "sxtA_gene": "NA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 5,
+        "water_type": "marine",
+        "sampling_period": "June",
+        "N_melanostomus": "NA",
+        "M_leidyi": "constant",
+        "mycE_gene": "NA",
+        "sxtA_gene": "NA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 6,
+        "water_type": "marine",
+        "sampling_period": "June",
+        "N_melanostomus": "NA",
+        "M_leidyi": "constant",
+        "mycE_gene": "NA",
+        "sxtA_gene": "NA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 7,
+        "water_type": "marine",
+        "sampling_period": "June",
+        "N_melanostomus": "NA",
+        "M_leidyi": "constant",
+        "mycE_gene": "NA",
+        "sxtA_gene": "NA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 8,
+        "water_type": "freshwater",
+        "sampling_period": "Apr, Sep, Nov",
+        "N_melanostomus": "occasional",
+        "M_leidyi": "NA",
+        "mycE_gene": 3,
+        "sxtA_gene": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 9,
+        "water_type": "freshwater",
+        "sampling_period": "Nov",
+        "N_melanostomus": "rare",
+        "M_leidyi": "NA",
+        "mycE_gene": 2,
+        "sxtA_gene": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 10,
+        "water_type": "freshwater",
+        "sampling_period": "May-Nov",
+        "N_melanostomus": "frequent",
+        "M_leidyi": "NA",
+        "mycE_gene": 2,
+        "sxtA_gene": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 11,
+        "water_type": "freshwater",
+        "sampling_period": "Jun, Sep",
+        "N_melanostomus": "frequent",
+        "M_leidyi": "NA",
+        "mycE_gene": 2,
+        "sxtA_gene": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 12,
+        "water_type": "freshwater",
+        "sampling_period": "Sep",
+        "N_melanostomus": "occasional",
+        "M_leidyi": "occasional",
+        "mycE_gene": 2,
+        "sxtA_gene": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 13,
+        "water_type": "freshwater",
+        "sampling_period": "Apr-Nov",
+        "N_melanostomus": "occasional",
+        "M_leidyi": "NA",
+        "mycE_gene": 2,
+        "sxtA_gene": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "area_id": 14,
+        "water_type": "freshwater",
+        "sampling_period": "Apr-Nov",
+        "N_melanostomus": "constant",
+        "M_leidyi": "NA",
+        "mycE_gene": 4,
+        "sxtA_gene": 2
+      }
+    }
+  ]
+}

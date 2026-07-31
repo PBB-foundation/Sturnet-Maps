@@ -2,289 +2,858 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Black Sea Map (Leaflet)</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  />
+
+  <title>Black Sea Map</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/leaflet.pattern@0.1.0/dist/leaflet.pattern-src.js"></script>
 
   <style>
-    html, body { height: 100%; margin: 0; }
-    #map { height: 100%; width: 100%; }
+    html,
+    body,
+    #map {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+    }
+
+    .panel,
+    .top-right,
+    .legend {
+      position: absolute;
+      z-index: 1000;
+      box-sizing: border-box;
+
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(20, 55, 80, 0.12);
+      border-radius: 10px;
+
+      box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.18);
+    }
+
+    /* =====================================================
+       CONTROL PANEL
+       ===================================================== */
 
     .panel {
-      position: absolute;
       top: 12px;
       left: 12px;
-      z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      padding: 10px 12px;
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      max-width: 300px;
-    }
 
-    .top-right {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      padding: 10px 12px;
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+      width: 310px;
+      max-height: calc(100vh - 24px);
+      padding: 11px 13px;
 
-    .top-right button {
-      border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
-      cursor: pointer;
-      background: #17384f;
-      color: white;
-      font-weight: 600;
+      overflow-y: auto;
     }
 
     .panel h3 {
-      margin: 0 0 8px 0;
+      margin: 0 0 9px;
+
+      color: #162f42;
       font-size: 14px;
     }
 
     .row {
       display: flex;
-      gap: 8px;
       align-items: center;
+      gap: 8px;
+
       margin: 6px 0;
     }
 
-    label {
+    .row > label {
+      min-width: 76px;
+
+      color: #333333;
       font-size: 12px;
-      min-width: 70px;
     }
 
     select {
       width: 100%;
-      padding: 6px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      min-width: 0;
+      padding: 6px 8px;
+
+      border: 1px solid #c8d2da;
+      border-radius: 7px;
+
+      background: #ffffff;
+      color: #222222;
+
+      font-size: 12px;
     }
 
     .checkbox-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 8px 0 4px 0;
+
+      margin: 8px 0 4px;
+
       font-size: 12px;
     }
 
     .checkbox-row input {
       margin: 0;
+      accent-color: #1d6fa5;
     }
 
-    .checkbox-row input[type="checkbox"] {
-      accent-color: #28a745;
+    .panel-divider {
+      height: 1px;
+      margin: 11px 0;
+
+      background: #dce3e8;
     }
 
-    .legend {
-      position: absolute;
-      bottom: 20px;
-      left: 12px;
-      z-index: 1000;
-      background: rgba(255,255,255,0.95);
+    .filter-section-title {
+      margin: 0 0 8px;
+
+      color: #17384f;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .species-filter-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .species-filter-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      min-height: 22px;
+
+      color: #333333;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .species-filter-item input {
+      margin: 0;
+      accent-color: #17384f;
+    }
+
+    .species-filter-item em {
+      min-width: 0;
+    }
+
+    .filter-symbol-container {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 16px;
+
+      width: 16px;
+      height: 16px;
+    }
+
+    .hint {
+      margin-top: 8px;
+
+      color: #555555;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    .observation-controls {
+      margin-top: 8px;
+    }
+
+    .context-filter-section {
+      margin-top: 10px;
+    }
+
+    .context-filter-note {
+      margin-top: 7px;
+
+      color: #5a6670;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    /* =====================================================
+       LOGIN
+       ===================================================== */
+
+    .top-right {
+      top: 12px;
+      right: 12px;
+
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
       padding: 10px 12px;
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      width: 255px;
+    }
+
+    #userEmail {
+      max-width: 180px;
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      font-size: 13px;
+    }
+
+    .top-right button {
+      padding: 8px 12px;
+
+      border: none;
+      border-radius: 8px;
+
+      background: #17384f;
+      color: #ffffff;
+
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    /* =====================================================
+       SPECIES SHAPES
+       ===================================================== */
+
+    .species-shape {
+      --shape-colour: #777777;
+
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .shape-circle {
+      width: 10px;
+      height: 10px;
+
+      border: 1px solid rgba(0, 0, 0, 0.32);
+      border-radius: 50%;
+
+      background: var(--shape-colour);
+    }
+
+    .shape-square {
+      width: 10px;
+      height: 10px;
+
+      border: 1px solid rgba(0, 0, 0, 0.32);
+      border-radius: 2px;
+
+      background: var(--shape-colour);
+    }
+
+    .shape-triangle {
+      width: 0;
+      height: 0;
+
+      border-right: 6px solid transparent;
+      border-bottom: 11px solid var(--shape-colour);
+      border-left: 6px solid transparent;
+
+      filter:
+        drop-shadow(0 1px 0 rgba(0, 0, 0, 0.45));
+    }
+
+    .shape-diamond {
+      width: 9px;
+      height: 9px;
+
+      border: 1px solid rgba(0, 0, 0, 0.32);
+      border-radius: 1px;
+
+      background: var(--shape-colour);
+      transform: rotate(45deg);
+    }
+
+    /* =====================================================
+       MAP SITE MARKERS
+       ===================================================== */
+
+    .site-marker-icon {
+      overflow: visible !important;
+
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .site-marker-cluster {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+
+      min-width: 0;
+      height: 22px;
+      box-sizing: border-box;
+      padding: 0;
+
+      border: none;
+      border-radius: 0;
+
+      background: transparent;
+
+      filter:
+        drop-shadow(0 2px 2px rgba(0, 0, 0, 0.42));
+
+      cursor: pointer;
+      white-space: nowrap;
+
+      transition:
+        transform 0.16s ease,
+        filter 0.16s ease;
+    }
+
+    .site-marker-cluster:hover {
+      transform: scale(1.12);
+
+      filter:
+        drop-shadow(0 4px 4px rgba(0, 0, 0, 0.48));
+    }
+
+    .site-marker-symbol {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      width: 12px;
+      height: 13px;
+    }
+
+    .site-marker-cluster .shape-circle,
+    .site-marker-cluster .shape-square {
+      width: 8px;
+      height: 8px;
+    }
+
+    .site-marker-cluster .shape-triangle {
+      border-right-width: 5px;
+      border-bottom-width: 9px;
+      border-left-width: 5px;
+    }
+
+    .site-marker-cluster .shape-diamond {
+      width: 7px;
+      height: 7px;
+    }
+
+
+    .biotic-marker-icon {
+      overflow: visible !important;
+
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .biotic-pressure-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      width: 22px;
+      height: 22px;
+      box-sizing: border-box;
+
+      border: 1.8px solid rgba(255, 255, 255, 0.98);
+      border-radius: 50%;
+
+      background: var(--pressure-colour, #999999);
+
+      box-shadow:
+        0 2px 5px rgba(0, 0, 0, 0.38),
+        0 0 0 1px rgba(22, 56, 79, 0.28);
+
+      cursor: pointer;
+
+      transition:
+        transform 0.16s ease,
+        box-shadow 0.16s ease;
+    }
+
+    .biotic-pressure-marker:hover {
+      transform: scale(1.14);
+
+      box-shadow:
+        0 4px 10px rgba(0, 0, 0, 0.42),
+        0 0 0 2px rgba(255, 255, 255, 0.8);
+    }
+
+    /* =====================================================
+       LEGEND
+       ===================================================== */
+
+    /* Default position: eDNA / no observations = bottom-left */
+    .legend {
+      left: 12px;
+      right: auto;
+      bottom: 20px;
+
+      width: 260px;
+      max-height: calc(100vh - 40px);
+      padding: 0;
+
+      overflow: hidden;
+
+      transition:
+        left 0.2s ease,
+        right 0.2s ease,
+        bottom 0.2s ease;
+    }
+
+    /* Biotic-pressure mode = bottom-right */
+    .legend.is-biotic-mode {
+      left: auto;
+      right: 12px;
+      bottom: 76px;
+
+      width: 275px;
+      max-height: calc(100vh - 100px);
+    }
+
+    .legend-toggle {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+
+      width: 100%;
+      padding: 10px 12px;
+
+      border: 0;
+      background: transparent;
+      color: #17384f;
+
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 750;
+      text-align: left;
+    }
+
+    .legend-toggle-icon {
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .legend-content {
+      box-sizing: border-box;
+      max-height: calc(100vh - 100px);
+      padding: 10px 12px;
+
+      overflow-y: auto;
     }
 
     .legend-title {
+      margin: 0 0 8px;
+
       font-size: 13px;
-      margin: 0 0 8px 0;
       font-weight: 600;
       line-height: 1.3;
     }
 
-    .legend-buoy {
-      display: inline-block;
-      object-fit: contain;
-    }
-
-    /* leged boys small mail */
-
-        .buoy-popup {
-      min-width: 120px;
-    }
-
-    .buoy-popup-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 4px;
-    }
-
-    .buoy-popup-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-      text-decoration: none;
-      border: 1px solid #cfcfcf;
-      border-radius: 6px;
-      background: #f8f8f8;
-      font-size: 14px;
-      line-height: 1;
-      color: #17384f;
-      transition: background 0.2s ease, border-color 0.2s ease;
-    }
-
-    .buoy-popup-link:hover {
-      background: #eaf3f8;
-      border-color: #17384f;
-    }
-
-    /* Coastal = tall */
-    .legend-buoy.coastal {
-      height: 40px;
-      width: auto;
-    }
-
-    /* Offshore = compact */
-    .legend-buoy.offshore {
-      height: 28px;
-      width: auto;
-    }
-
     .bar {
       height: 10px;
+
+      border: 1px solid #dddddd;
       border-radius: 6px;
-      border: 1px solid #ddd;
     }
 
     .legend-labels {
       display: flex;
       justify-content: space-between;
+
       margin-top: 6px;
+
       font-size: 12px;
     }
 
     .legend-divider {
       height: 1px;
-      background: #ddd;
-      margin: 10px 0 8px 0;
+      margin: 10px 0 8px;
+
+      background: #dddddd;
     }
 
     .legend-line-item,
-    .legend-fill-item {
+    .legend-fill-item,
+    .species-legend-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 12px;
-      color: #333;
+
       margin-top: 6px;
+
+      color: #333333;
+      font-size: 12px;
+    }
+
+    .species-legend-symbol {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 22px;
+
+      width: 22px;
+      height: 18px;
+    }
+
+    .legend-buoy {
+      display: inline-block;
+      width: auto;
+
+      object-fit: contain;
+    }
+
+    .legend-buoy.coastal {
+      height: 40px;
+    }
+
+    .legend-buoy.offshore {
+      height: 28px;
     }
 
     .legend-line-symbol {
       display: inline-block;
+      flex-shrink: 0;
+
       width: 24px;
       height: 0;
+
       border-top: 2px solid #7f7f7f;
-      opacity: 0.9;
-      flex-shrink: 0;
     }
 
     .legend-hatch-symbol {
       display: inline-block;
+      flex-shrink: 0;
+
       width: 24px;
       height: 14px;
+
       border: 1px solid #28a745;
+
       background:
         repeating-linear-gradient(
           -45deg,
-          rgba(40,167,69,0.75) 0px,
-          rgba(40,167,69,0.75) 2px,
+          rgba(40, 167, 69, 0.75) 0,
+          rgba(40, 167, 69, 0.75) 2px,
           transparent 2px,
           transparent 6px
         );
-      flex-shrink: 0;
     }
 
-    .hint {
+
+    .pressure-legend-subtitle {
+      margin: -3px 0 5px;
+
+      color: #273b4a;
       font-size: 12px;
-      color: #444;
-      margin-top: 8px;
-      line-height: 1.25;
+      font-style: normal;
+      font-weight: 650;
     }
 
-    .hidden {
-      display: none;
+    .pressure-legend-subtitle.is-scientific {
+      font-style: italic;
     }
+
+    /* Scientific names in the biotic-pressure selector */
+    #bioticPressureType.scientific-selected {
+      font-style: italic;
+    }
+
+    #bioticPressureType option.scientific-option {
+      font-style: italic;
+    }
+
+    #bioticPressureType option:not(.scientific-option) {
+      font-style: normal;
+    }
+
+    .pressure-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      margin-top: 5px;
+
+      color: #333333;
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .pressure-legend-swatch {
+      display: inline-block;
+      flex: 0 0 12px;
+
+      width: 12px;
+      height: 12px;
+
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      border-radius: 50%;
+
+      background: var(--pressure-colour, #999999);
+    }
+
+    /* =====================================================
+       RASTER COLOUR BARS
+       ===================================================== */
 
     .temp-bar {
-      background: linear-gradient(90deg,
-        #2c7bb6, #00a6ca, #00ccbc, #90eb9d, #ffff8c, #f9d057, #f29e2e, #e76818, #d7191c
-      );
+      background:
+        linear-gradient(
+          90deg,
+          #2c7bb6,
+          #00a6ca,
+          #00ccbc,
+          #90eb9d,
+          #ffff8c,
+          #f9d057,
+          #f29e2e,
+          #e76818,
+          #d7191c
+        );
     }
 
     .salinity-bar {
-      background: linear-gradient(90deg,
-        #313695, #4575b4, #74add1, #abd9e9, #e0f3f8, #fee090, #fdae61, #f46d43, #d73027
-      );
+      background:
+        linear-gradient(
+          90deg,
+          #313695,
+          #4575b4,
+          #74add1,
+          #abd9e9,
+          #e0f3f8,
+          #fee090,
+          #fdae61,
+          #f46d43,
+          #d73027
+        );
     }
 
     .oxygen-bar {
-      background: linear-gradient(90deg,
-        #d73027,
-        #f46d43,
-        #fdae61,
-        #fee08b,
-        #d9ef8b,
-        #91cf60,
-        #4575b4,
-        #313695
-      );
+      background:
+        linear-gradient(
+          90deg,
+          #d73027,
+          #f46d43,
+          #fdae61,
+          #fee08b,
+          #d9ef8b,
+          #91cf60,
+          #4575b4,
+          #313695
+        );
     }
 
-    /* .current-bar {
-      background: linear-gradient(90deg,
-        #f7fbff, #deebf7, #c6dbef, #9ecae1,
-        #6baed6, #4292c6, #2171b5, #08519c, #08306b
-      );
-    } */
-
     .current-bar {
-      background: linear-gradient(90deg,
-        #2c7bb6,
-        #5aa7d8,
-        #91d3c2,
-        #d9ef8b,
-        #fee08b,
-        #fdae61,
-        #f46d43,
-        #d73027
-      );
+      background:
+        linear-gradient(
+          90deg,
+          #2c7bb6,
+          #5aa7d8,
+          #91d3c2,
+          #d9ef8b,
+          #fee08b,
+          #fdae61,
+          #f46d43,
+          #d73027
+        );
     }
 
     .bathy-bar {
-      background: linear-gradient(90deg,
-        #08306b,
-        #08519c,
-        #2171b5,
-        #4292c6,
-        #6baed6,
-        #9ecae1,
-        #c6dbef,
-        #deebf7
-      );
+      background:
+        linear-gradient(
+          90deg,
+          #08306b,
+          #08519c,
+          #2171b5,
+          #4292c6,
+          #6baed6,
+          #9ecae1,
+          #c6dbef,
+          #deebf7
+        );
     }
+
+    /* =====================================================
+       STURGEON POPUP
+       ===================================================== */
+
+    .species-info-title {
+      margin: 0 0 8px;
+
+      color: #172f40;
+
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .detected-species-list {
+      display: grid;
+      gap: 5px;
+
+      margin-bottom: 10px;
+    }
+
+    .detected-species-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .detected-species-item em {
+      color: var(--item-colour);
+    }
+
+    .site-meta {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 4px 10px;
+
+      margin-bottom: 0;
+
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .site-meta-label {
+      color: #555555;
+      font-weight: 600;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .sturgeon-popup-card {
+      width: 360px;
+      max-width: calc(100vw - 48px);
+      box-sizing: border-box;
+      padding: 14px 16px;
+
+      border-left: 6px solid var(--summary-colour, #17384f);
+    }
+
+
+    .biotic-popup-card {
+      width: 390px;
+      max-width: calc(100vw - 48px);
+      box-sizing: border-box;
+      padding: 14px 16px;
+
+      border-left: 6px solid var(--summary-colour, #17384f);
+    }
+
+    .biotic-popup-divider {
+      height: 1px;
+      margin: 11px 0 9px;
+
+      background: #dfe5e9;
+    }
+
+    .biotic-popup-heading {
+      margin: 0 0 7px;
+
+      color: #172f40;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .biotic-pressure-table {
+      display: grid;
+      gap: 0;
+      width: 100%;
+
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .biotic-pressure-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 120px;
+      gap: 12px;
+      align-items: center;
+
+      padding: 6px 0;
+
+      border-bottom: 1px solid #e6eaed;
+    }
+
+    .biotic-pressure-row:last-child {
+      border-bottom: none;
+    }
+
+    .biotic-pressure-name {
+      min-width: 0;
+    }
+
+    .biotic-pressure-value {
+      min-width: 0;
+
+      color: var(--status-colour, #374151);
+      font-weight: 750;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .leaflet-popup.sturgeon-popup .leaflet-popup-content-wrapper {
+      padding: 0;
+
+      border: 1px solid rgba(20, 55, 80, 0.12);
+      border-radius: 14px;
+
+      background: rgba(255, 255, 255, 0.98);
+
+      box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.18);
+
+      overflow: hidden;
+    }
+
+    .leaflet-popup.sturgeon-popup .leaflet-popup-content {
+      margin: 0;
+    }
+
+    .leaflet-popup.sturgeon-popup .leaflet-popup-tip-container {
+      margin-top: -1px;
+    }
+
+    .leaflet-popup.sturgeon-popup .leaflet-popup-tip {
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: none;
+    }
+
+    .leaflet-popup.sturgeon-popup .leaflet-popup-close-button {
+      display: none;
+    }
+
+    /* =====================================================
+       ISOBATHS
+       ===================================================== */
 
     .isobath-text {
       background: transparent !important;
@@ -293,192 +862,368 @@
     }
 
     .isobath-text div {
+      display: inline-block;
+
       transform: translate(-50%, -50%);
-      /* font-size: 10px; */
-      font-size: 12px;
-      /* font-weight: 400; */
-      font-weight: 600;
+
       color: rgba(29, 28, 28, 0.7);
-      background: transparent;
-      padding: 0;
-      text-shadow: 0 0 2px rgba(255,255,255,0.8);
+
+      font-size: 12px;
+      font-weight: 600;
       line-height: 1;
       white-space: nowrap;
-      display: inline-block;
+
+      text-shadow:
+        0 0 2px rgba(255, 255, 255, 0.8);
+    }
+
+    /* =====================================================
+       BUOY POPUP
+       ===================================================== */
+
+    .buoy-popup {
+      min-width: 120px;
+    }
+
+    .buoy-popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+
+      margin-bottom: 4px;
+    }
+
+    .buoy-popup-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      width: 24px;
+      height: 24px;
+
+      border: 1px solid #cfcfcf;
+      border-radius: 6px;
+
+      background: #f8f8f8;
+      color: #17384f;
+
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    /* =====================================================
+       SOUND
+       ===================================================== */
+
+    .sound-toggle {
+      position: absolute;
+      right: 12px;
+      bottom: 68px;
+      z-index: 1000;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      width: 35px;
+      height: 35px;
+
+      border: none;
+      border-radius: 50%;
+
+      background: rgba(255, 255, 255, 0.95);
+
+      box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.2);
+
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .leaflet-control-attribution {
+      font-size: 11px;
+    }
+
+    /* =====================================================
+       MOBILE
+       ===================================================== */
+
+    @media (max-width: 640px) {
+      html,
+      body,
+      #map {
+        height: 100dvh;
+      }
+
+      .panel {
+        top: 8px;
+        left: 8px;
+
+        transform: scale(0.61);
+        transform-origin: top left;
+      }
+
+      .top-right {
+        top: 8px;
+        right: 8px;
+
+        transform: scale(0.66);
+        transform-origin: top right;
+      }
+
+      #userEmail {
+        display: none;
+      }
+
+      .legend,
+      .legend.is-biotic-mode {
+        right: 8px;
+        bottom: 78px;
+        left: auto;
+
+        width: min(280px, calc(100vw - 16px));
+        max-height: 48vh;
+
+        transform: none;
+      }
+
+      .legend-toggle {
+        display: flex;
+      }
+
+      .legend-content {
+        max-height: calc(48vh - 40px);
+        padding-top: 4px;
+      }
+
+      .legend.is-collapsed {
+        width: 142px;
+      }
+
+      .legend.is-collapsed .legend-content {
+        display: none;
+      }
+
+      .sturgeon-popup-card,
+      .biotic-popup-card {
+        width: 280px;
+        padding: 12px 14px;
+      }
+
+      .biotic-pressure-row {
+        grid-template-columns: minmax(0, 1fr) 92px;
+        gap: 8px;
+      }
+
+      .sound-toggle {
+        right: 8px;
+        bottom: 82px;
+
+        transform: scale(0.76);
+        transform-origin: bottom right;
+      }
+
+      .leaflet-control-scale {
+        margin: 0 0 4px 4px !important;
+
+        transform: scale(0.72);
+        transform-origin: bottom left;
+      }
+
+      .leaflet-bottom.leaflet-right {
+        right: 40px;
+        bottom: 2px;
+
+        max-width: 195px;
+      }
+
+      .leaflet-control-attribution {
+        max-width: 185px;
+        margin: 0 4px 4px 0 !important;
+
+        overflow-wrap: anywhere;
+        white-space: normal;
+
+        font-size: 10px;
+        line-height: 1.15;
+
+        transform: scale(0.66);
+        transform-origin: bottom right;
+      }
+
+      .legend-buoy.coastal {
+        height: 34px;
+      }
+
+      .legend-buoy.offshore {
+        height: 24px;
+      }
+
+      .isobath-text div {
+        font-size: 10px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .panel {
+        transform: scale(0.55);
+      }
+
+      .top-right {
+        transform: scale(0.6);
+      }
+
+      .legend,
+      .legend.is-biotic-mode {
+        width: min(250px, calc(100vw - 16px));
+      }
+
+      .legend.is-collapsed {
+        width: 136px;
+      }
+
+      .sturgeon-popup-card,
+      .biotic-popup-card {
+        width: 250px;
+      }
+
+      .sound-toggle {
+        bottom: 8px;
+        transform: scale(0.68);
+      }
+
+      .leaflet-control-attribution {
+        max-width: 160px;
+        transform: scale(0.56);
+      }
     }
 
 
 
-    .sound-toggle {
-  position: absolute;
-  bottom: 28px;
-  right: 12px;
-  z-index: 1000;
+    /* Hide species list from the bottom-left legend */
+    #speciesLegendSection {
+      display: none !important;
+    }
 
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  border: none;
 
-  background: rgba(255,255,255,0.95);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-
-  font-size: 20px;
-  cursor: pointer;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    /* Hide the instruction text to reduce panel height */
+#panelHint {
+  display: none !important;
 }
 
 
+    /* =====================================================
+       MAP ATTRIBUTION
+       ===================================================== */
 
-/* ---------- Base desktop sizes ---------- */
-.panel {
-  width: 300px;
-  max-width: none;
-}
+    .leaflet-control-attribution {
+      max-width: min(
+        900px,
+        calc(100vw - 90px)
+      );
 
-.legend {
-  width: 255px;
-  max-width: none;
-}
+      box-sizing: border-box;
+      padding: 4px 8px !important;
 
-.top-right {
-  max-width: none;
-}
+      background: rgba(
+        255,
+        255,
+        255,
+        0.94
+      ) !important;
 
-#userEmail {
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+      border-top-left-radius: 4px;
 
-/* Keep Leaflet credits neat */
-.leaflet-control-attribution {
-  font-size: 11px;
-  /* max-width: 46vw;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; */
-}
+      color: #334955;
+      font-size: 10px;
+      line-height: 1.3;
+      text-align: right;
+      white-space: normal;
+    }
 
-/* ---------- Mobile: keep same layout, scale everything down ---------- */
-@media (max-width: 640px) {
-  .panel,
-  .legend,
-  .top-right,
-  .sound-toggle,
-  .leaflet-control-attribution,
-  .leaflet-control-scale {
-    transform-origin: top left;
-  }
+    .map-credit-main {
+      color: #17384f;
+      font-weight: 600;
+    }
 
-  .panel {
-    top: 10px;
-    left: 10px;
-    width: 300px;
-    transform: scale(0.72);
-  }
+    .map-credit-line {
+      display: block;
+    }
 
-  .top-right {
-    top: 10px;
-    right: 10px;
-    left: auto;
-    width: auto;
-    transform-origin: top right;
-    transform: scale(0.72);
-  }
+    .map-credit-line + .map-credit-line {
+      margin-top: 1px;
+    }
 
-  .legend {
-    left: 10px;
-    bottom: 10px;
-    width: 255px;
-    transform-origin: bottom left;
-    transform: scale(0.72);
-  }
+    .map-credit-secondary {
+      margin-top: 2px;
 
-  .sound-toggle {
-    right: 10px;
-    bottom: 10px;
-    transform-origin: bottom right;
-    transform: scale(0.82);
-  }
+      color: #5a6670;
+      font-size: 9px;
+      font-weight: 400;
+    }
 
-  .leaflet-control-attribution {
-    transform-origin: bottom right;
-    transform: scale(0.78);
-    margin: 0 6px 6px 0 !important;
-    max-width: 42vw;
-  }
+    .map-credit-main a,
+    .map-credit-secondary a {
+      color: #175f8c;
+      text-decoration: none;
+    }
 
-  .leaflet-control-scale {
-    transform-origin: bottom left;
-    transform: scale(0.78);
-    margin: 0 0 6px 6px !important;
-  }
+    .map-credit-main a:hover,
+    .map-credit-secondary a:hover {
+      text-decoration: underline;
+    }
 
-  .legend-buoy.coastal {
-    height: 34px;
-  }
+    .credit-separator {
+      display: inline-block;
+      margin: 0 4px;
 
-  .legend-buoy.offshore {
-    height: 24px;
-  }
+      color: #7b8992;
+    }
 
-  .isobath-text div {
-    font-size: 10px;
-  }
-}
+    @media (max-width: 640px) {
+      .leaflet-bottom.leaflet-right {
+        right: 42px;
+        bottom: 2px;
 
-/* Smaller phones */
-@media (max-width: 420px) {
-  .panel {
-    transform: scale(0.64);
-  }
+        max-width: calc(
+          100vw - 52px
+        );
+      }
 
-  .top-right {
-    transform: scale(0.64);
-  }
+      .leaflet-control-attribution {
+        max-width: 300px;
+        margin: 0 3px 3px 0 !important;
+        padding: 4px 6px !important;
 
-  .legend {
-    transform: scale(0.64);
-  }
+        font-size: 8.5px;
+        line-height: 1.2;
 
-  .sound-toggle {
-    transform: scale(0.76);
-  }
+        transform: none !important;
+      }
 
-  .leaflet-control-attribution,
-  .leaflet-control-scale {
-    transform: scale(0.72);
-  }
-}
+      .map-credit-secondary {
+        font-size: 8px;
+      }
 
-.leaflet-control-attribution {
-  font-size: 11px;
-}
+      .credit-separator {
+        margin: 0 2px;
+      }
+    }
 
-@media (max-width: 640px) {
-  .leaflet-control-attribution {
-    transform-origin: bottom right;
-    transform: scale(0.78);
-    margin: 0 6px 6px 0 !important;
+    @media (max-width: 420px) {
+      .leaflet-control-attribution {
+        max-width: 255px;
 
-    max-width: none;          /* remove trimming */
-    white-space: normal;      /* allow wrapping */
-    overflow: visible;        /* allow full text */
-    text-overflow: clip;      /* no dots */
-    line-height: 1.2;
-  }
+        font-size: 8px;
 
-  .leaflet-bottom.leaflet-right {
-    right: 6px;
-    bottom: 4px;
-    max-width: 46vw;
-  }
-}
+        transform: none !important;
+      }
+
+      .map-credit-secondary {
+        font-size: 7.5px;
+      }
+    }
 
   </style>
 </head>
@@ -488,7 +1233,13 @@
 
   <div class="top-right">
     <span id="userEmail">Loading...</span>
-    <button id="logoutBtn">Logout</button>
+
+    <button
+      id="logoutBtn"
+      type="button"
+    >
+      Logout
+    </button>
   </div>
 
   <div class="panel">
@@ -496,6 +1247,7 @@
 
     <div class="row">
       <label for="layerType">Layer</label>
+
       <select id="layerType">
         <option value="temperature" selected>Temperature</option>
         <option value="salinity">Salinity</option>
@@ -507,6 +1259,7 @@
 
     <div class="row" id="depthRow">
       <label for="depth">Depth</label>
+
       <select id="depth">
         <option value="surface" selected>Surface</option>
         <option value="bottom">Bottom</option>
@@ -515,6 +1268,7 @@
 
     <div class="row" id="monthRow">
       <label for="month">Month</label>
+
       <select id="month">
         <option value="february" selected>February</option>
         <option value="march">March</option>
@@ -526,32 +1280,245 @@
     </div>
 
     <div class="checkbox-row">
-      <input type="checkbox" id="habitatToggle">
-      <label for="habitatToggle" style="min-width:auto;">Sturgeon habitat</label>
+      <input type="checkbox" id="habitatToggle" />
+
+      <label for="habitatToggle" style="min-width:auto;">
+        Sturgeon habitat
+      </label>
     </div>
 
-    <div class="hint" id="panelHint">Select depth and month.</div>
+    <div class="hint" id="panelHint">
+      Select depth and month.
+    </div>
+
+    <div class="panel-divider"></div>
+
+    <div class="row observation-controls">
+      <label for="observationLayer">Observations</label>
+
+      <select id="observationLayer">
+        <option value="none">None</option>
+        <option value="edna" selected>Sturgeon eDNA</option>
+        <option value="biotic">Biotic pressures</option>
+      </select>
+    </div>
+
+    <div id="ednaControls" class="context-filter-section">
+      <div class="filter-section-title">
+        Sturgeon water eDNA presence
+      </div>
+
+      <div class="species-filter-list">
+        <label class="species-filter-item">
+          <input
+            type="checkbox"
+            name="speciesFilter"
+            value="A_stellatus"
+            checked
+          />
+
+          <span class="filter-symbol-container">
+            <span
+              class="species-shape shape-circle"
+              style="--shape-colour:#8A2BE2;"
+            ></span>
+          </span>
+
+          <em>Acipenser stellatus</em>
+        </label>
+
+        <label class="species-filter-item">
+          <input
+            type="checkbox"
+            name="speciesFilter"
+            value="A_gueldenstaedtii"
+            checked
+          />
+
+          <span class="filter-symbol-container">
+            <span
+              class="species-shape shape-square"
+              style="--shape-colour:#0066FF;"
+            ></span>
+          </span>
+
+          <em>Acipenser gueldenstaedtii</em>
+        </label>
+
+        <label class="species-filter-item">
+          <input
+            type="checkbox"
+            name="speciesFilter"
+            value="A_ruthenus"
+            checked
+          />
+
+          <span class="filter-symbol-container">
+            <span
+              class="species-shape shape-triangle"
+              style="--shape-colour:#8B4513;"
+            ></span>
+          </span>
+
+          <em>Acipenser ruthenus</em>
+        </label>
+
+        <label class="species-filter-item">
+          <input
+            type="checkbox"
+            name="speciesFilter"
+            value="A_nudiventris"
+            checked
+          />
+
+          <span class="filter-symbol-container">
+            <span
+              class="species-shape shape-diamond"
+              style="--shape-colour:#00CFE8;"
+            ></span>
+          </span>
+
+          <em>Acipenser nudiventris</em>
+        </label>
+      </div>
+
+      <div class="row">
+        <label for="waterTypeFilter">Water type</label>
+
+        <select id="waterTypeFilter">
+          <option value="all" selected>All</option>
+          <option value="marine">Marine</option>
+          <option value="freshwater">Freshwater</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="samplingPeriodFilter">Sampling</label>
+
+        <select id="samplingPeriodFilter">
+          <option value="all" selected>All periods</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="bioticControls" class="context-filter-section hidden">
+      <div class="filter-section-title">
+        Biotic pressures
+      </div>
+
+      <div class="row">
+        <label for="bioticPressureType">Pressure</label>
+
+        <select id="bioticPressureType">
+          <option
+            value="N_melanostomus"
+            class="scientific-option"
+            selected
+          >
+            Neogobius melanostomus
+          </option>
+
+          <option
+            value="M_leidyi"
+            class="scientific-option"
+          >
+            Mnemiopsis leidyi
+          </option>
+          <option value="mycE_gene">mycE gene</option>
+          <option value="sxtA_gene">sxtA gene</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="bioticWaterTypeFilter">Water type</label>
+
+        <select id="bioticWaterTypeFilter">
+          <option value="all" selected>All</option>
+          <option value="marine">Marine</option>
+          <option value="freshwater">Freshwater</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="bioticSamplingPeriodFilter">Sampling</label>
+
+        <select id="bioticSamplingPeriodFilter">
+          <option value="all" selected>All periods</option>
+        </select>
+      </div>
+
+      <div class="context-filter-note">
+        Marker colour shows the selected pressure level.
+      </div>
+    </div>
   </div>
 
-  <div class="legend" id="legend">
-    <div class="legend-title" id="legendTitle">Surface temperature (°C) - February</div>
+  <div
+    class="legend"
+    id="legend"
+  >
+    <button
+      id="legendToggle"
+      class="legend-toggle"
+      type="button"
+      aria-expanded="true"
+      aria-controls="legendContent"
+    >
+      <span>Legend</span>
+      <span
+        id="legendToggleIcon"
+        class="legend-toggle-icon"
+        aria-hidden="true"
+      >
+        ▲
+      </span>
+    </button>
 
-    <div class="bar temp-bar" id="legendBar"></div>
+    <div
+      id="legendContent"
+      class="legend-content"
+    >
+      <div
+        class="legend-title"
+      id="legendTitle"
+    >
+      Surface temperature (°C) - February
+    </div>
+
+    <div
+      class="bar temp-bar"
+      id="legendBar"
+    ></div>
 
     <div class="legend-labels">
-      <span id="minV">4.15</span>
-      <span id="maxV">9.08</span>
+      <span id="minV">
+        4.15
+      </span>
+
+      <span id="maxV">
+        9.08
+      </span>
     </div>
 
     <div class="legend-divider"></div>
 
     <div class="legend-line-item">
-      <img src="buoy_coastal.png" class="legend-buoy coastal">
+      <img
+        src="buoy_coastal.png"
+        class="legend-buoy coastal"
+        alt=""
+      />
+
       <span>Coastal buoy</span>
     </div>
 
     <div class="legend-line-item">
-      <img src="buoy_offshore.png" class="legend-buoy offshore">
+      <img
+        src="buoy_offshore.png"
+        class="legend-buoy offshore"
+        alt=""
+      />
+
       <span>Offshore buoy</span>
     </div>
 
@@ -564,15 +1531,65 @@
       <span class="legend-hatch-symbol"></span>
       <span>Sturgeon habitat area</span>
     </div>
+
+    <div
+      id="speciesLegendSection"
+      class="hidden"
+    >
+      <div class="legend-divider"></div>
+
+      <div class="legend-title">
+        eDNA sturgeon detections
+      </div>
+
+      <div id="speciesLegendItems"></div>
+    </div>
+
+    <div
+      id="bioticLegendSection"
+      class="hidden"
+    >
+      <div class="legend-divider"></div>
+
+      <div class="legend-title">
+        Biotic pressure
+      </div>
+
+      <div
+        id="bioticLegendSubtitle"
+        class="pressure-legend-subtitle"
+      ></div>
+
+      <div id="bioticLegendItems"></div>
+    </div>
+    </div>
   </div>
 
-  <button id="soundToggle" class="sound-toggle">🔇</button>
-  <audio id="seaSound" loop>
-    <source src="freesound_community-seagulls-by-the-sea-7042_new.mp3" type="audio/mpeg">
+
+  <button
+    id="soundToggle"
+    class="sound-toggle"
+    type="button"
+    aria-label="Toggle sea sound"
+  >
+    🔇
+  </button>
+
+  <audio
+    id="seaSound"
+    loop
+  >
+    <source
+      src="freesound_community-seagulls-by-the-sea-7042_new.mp3"
+      type="audio/mpeg"
+    />
   </audio>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+
     import {
       getAuth,
       onAuthStateChanged,
@@ -589,132 +1606,358 @@
       measurementId: "G-F8HEE8SYXB"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    const app =
+      initializeApp(firebaseConfig);
+
+    const auth =
+      getAuth(app);
 
     let mapInitialized = false;
     let redirecting = false;
     let loggingOut = false;
 
     function goToLogin() {
-      if (redirecting) return;
-      redirecting = true;
-      window.location.replace("index.html");
-    }
-
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        goToLogin();
+      if (redirecting) {
         return;
       }
 
-      document.getElementById("userEmail").textContent = user.email || "Signed in";
+      redirecting = true;
 
-      if (!mapInitialized) {
-        mapInitialized = true;
-        initMap();
+      window.location.replace(
+        "index.html"
+      );
+    }
+
+    onAuthStateChanged(
+      auth,
+      user => {
+        if (!user) {
+          goToLogin();
+          return;
+        }
+
+        document.getElementById(
+          "userEmail"
+        ).textContent =
+          user.email || "Signed in";
+
+        if (!mapInitialized) {
+          mapInitialized = true;
+          initMap();
+        }
       }
-    });
+    );
 
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      if (loggingOut) return;
+    document
+      .getElementById("logoutBtn")
+      .addEventListener(
+        "click",
+        async () => {
+          if (loggingOut) {
+            return;
+          }
 
-      loggingOut = true;
+          loggingOut = true;
 
-      try {
-        await signOut(auth);
-        goToLogin();
-      } catch (error) {
-        console.error("Logout failed:", error);
-        loggingOut = false;
-      }
-    });
+          try {
+            await signOut(auth);
+            goToLogin();
+          } catch (error) {
+            console.error(
+              "Logout failed:",
+              error
+            );
+
+            loggingOut = false;
+          }
+        }
+      );
 
     function initMap() {
-      const map = L.map("map").setView([44.2, 29.4], 8);
+      const map =
+        L.map("map").setView(
+          [44.2, 29.4],
+          8
+        );
 
-      function getBuoySize() {
-        const z = map.getZoom();
+      L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          maxZoom: 19,
+          attribution: ""
+        }
+      ).addTo(map);
 
-        if (z <= 7) return 25;
-        if (z <= 9) return 35;
-        return 50;
-      }
+      map.attributionControl.setPrefix(`
+        <div class="map-credit-main">
+          <div class="map-credit-line">
+            &copy;
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              OpenStreetMap contributors
+            </a>
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors"
+            <span class="credit-separator">|</span>
+
+            Selected environmental layers generated using
+          </div>
+
+          <div class="map-credit-line">
+            <a
+              href="https://marine.copernicus.eu/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              E.U. Copernicus Marine Service Information (CMEMS)
+            </a>
+
+            <span class="credit-separator">|</span>
+
+            Other data: SturNet partners / GeoEcoMar.
+          </div>
+        </div>
+
+        <div class="map-credit-secondary">
+          Map interface:
+          <a
+            href="https://leafletjs.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Leaflet
+          </a>
+
+          <span class="credit-separator">|</span>
+
+          Sound:
+          <a
+            href="https://pixabay.com/users/freesound_community-46691455/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            freesound_community
+          </a>
+          /
+          <a
+            href="https://pixabay.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Pixabay
+          </a>
+
+          <span class="credit-separator">|</span>
+
+          Buoy data:
+          <a
+            href="https://www.euxinus.eu/emso_euxinus_network.html"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            IOSIN EMSO-EUXINUS
+          </a>
+        </div>
+      `);
+
+      L.control.scale({
+        metric: true,
+        imperial: false
       }).addTo(map);
 
-      map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet</a>');
+      const AOI_FILE =
+        "area_of_interest.geojson";
 
-      map.attributionControl.addAttribution(
-        'Sound: <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=7042" target="_blank" rel="noopener noreferrer">freesound_community</a> / <a href="https://pixabay.com/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=7042" target="_blank" rel="noopener noreferrer">Pixabay</a>'
-      );
+      const IZOBATE_FILE =
+        "izobate_AOI.geojson";
 
-      map.attributionControl.addAttribution(
-        'Buoy data: <a href="https://www.euxinus.eu/emso_euxinus_network.html" target="_blank" rel="noopener noreferrer">IOSIN EMSO-EUXINUS</a>'
-      );
+      const HABITAT_FILE =
+        "sturgeon_habitat.geojson";
 
-      L.control.scale({ metric: true, imperial: false }).addTo(map);
+      const STURGEON_EDNA_FILE =
+        "sturgeon_edna_updated_names.geojson";
 
-      const AOI_FILE = "area_of_interest.geojson";
-      const IZOBATE_FILE = "izobate_AOI.geojson";
-      const HABITAT_FILE = "sturgeon_habitat.geojson";
+
+      const BIOTIC_PRESSURE_FILE =
+        "biotic_pressures.geojson";
+
+      const TILE_ROOT =
+        "sturnet_database/tiles";
 
       const TILE_MIN_ZOOM = 6;
       const TILE_MAX_ZOOM = 12;
-      const TILE_ROOT = "sturnet_database/tiles";
 
       const temperatureRanges = {
         surface: {
-          february:  { min: 4.15,  max: 9.08 },
-          march:     { min: 6.34,  max: 9.08 },
-          april:     { min: 9.82,  max: 11.46 },
-          september: { min: 22.20, max: 23.79 },
-          october:   { min: 15.90, max: 18.68 },
-          november:  { min: 13.76, max: 16.20 }
+          february: {
+            min: 4.15,
+            max: 9.08
+          },
+
+          march: {
+            min: 6.34,
+            max: 9.08
+          },
+
+          april: {
+            min: 9.82,
+            max: 11.46
+          },
+
+          september: {
+            min: 22.20,
+            max: 23.79
+          },
+
+          october: {
+            min: 15.90,
+            max: 18.68
+          },
+
+          november: {
+            min: 13.76,
+            max: 16.20
+          }
         },
+
         bottom: {
-          february:  { min: 3.80,  max: 9.26 },
-          march:     { min: 5.50,  max: 8.96 },
-          april:     { min: 6.95,  max: 11.30 },
-          september: { min: 8.81,  max: 23.86 },
-          october:   { min: 8.74,  max: 18.56 },
-          november:  { min: 8.58,  max: 15.31 }
+          february: {
+            min: 3.80,
+            max: 9.26
+          },
+
+          march: {
+            min: 5.50,
+            max: 8.96
+          },
+
+          april: {
+            min: 6.95,
+            max: 11.30
+          },
+
+          september: {
+            min: 8.81,
+            max: 23.86
+          },
+
+          october: {
+            min: 8.74,
+            max: 18.56
+          },
+
+          november: {
+            min: 8.58,
+            max: 15.31
+          }
         }
       };
 
       const salinityRanges = {
         surface: {
-          february:  { min: 7.23, max: 18.40 },
-          march:     { min: 6.64, max: 18.45 },
-          april:     { min: 4.71, max: 18.67 },
-          september: { min: 7.59, max: 18.90 },
-          october:   { min: 8.12, max: 18.62 },
-          november:  { min: 8.11, max: 18.74 }
+          february: {
+            min: 7.23,
+            max: 18.40
+          },
+
+          march: {
+            min: 6.64,
+            max: 18.45
+          },
+
+          april: {
+            min: 4.71,
+            max: 18.67
+          },
+
+          september: {
+            min: 7.59,
+            max: 18.90
+          },
+
+          october: {
+            min: 8.12,
+            max: 18.62
+          },
+
+          november: {
+            min: 8.11,
+            max: 18.74
+          }
         },
+
         bottom: {
-          default:   { min: 13.55, max: 22.03 }
+          default: {
+            min: 13.55,
+            max: 22.03
+          }
         }
       };
 
       const dissolvedOxygenRanges = {
-        february:  { min: 294.17, max: 393.17 },
-        march:     { min: 303.49, max: 387.90 },
-        april:     { min: 295.29, max: 478.93 },
-        september: { min: 231.97, max: 355.16 },
-        october:   { min: 252.73, max: 312.29 },
-        november:  { min: 262.44, max: 320.22 }
+        february: {
+          min: 294.17,
+          max: 393.17
+        },
+
+        march: {
+          min: 303.49,
+          max: 387.90
+        },
+
+        april: {
+          min: 295.29,
+          max: 478.93
+        },
+
+        september: {
+          min: 231.97,
+          max: 355.16
+        },
+
+        october: {
+          min: 252.73,
+          max: 312.29
+        },
+
+        november: {
+          min: 262.44,
+          max: 320.22
+        }
       };
 
-        const currentRanges = {
-        february:  { min: 0.0010, max: 0.4100 },
-        march:     { min: 0.0003, max: 0.2100 },
-        april:     { min: 0.0010, max: 0.2000 },
-        september: { min: 0.0020, max: 0.3480 },
-        october:   { min: 0.0001, max: 0.2130 },
-        november:  { min: 0.0008, max: 0.1840 }
+      const currentRanges = {
+        february: {
+          min: 0.0010,
+          max: 0.4100
+        },
+
+        march: {
+          min: 0.0003,
+          max: 0.2100
+        },
+
+        april: {
+          min: 0.0010,
+          max: 0.2000
+        },
+
+        september: {
+          min: 0.0020,
+          max: 0.3480
+        },
+
+        october: {
+          min: 0.0001,
+          max: 0.2130
+        },
+
+        november: {
+          min: 0.0008,
+          max: 0.1840
+        }
       };
 
       const bathyRange = {
@@ -736,531 +1979,2427 @@
         bottom: "Bottom"
       };
 
+      const speciesConfig = {
+        A_stellatus: {
+          label: "Acipenser stellatus",
+          shortLabel: "A. stellatus",
+          colour: "#8A2BE2",
+          shape: "circle"
+        },
+
+        A_gueldenstaedtii: {
+          label: "Acipenser gueldenstaedtii",
+          shortLabel: "A. gueldenstaedtii",
+          colour: "#0066FF",
+          shape: "square"
+        },
+
+        A_ruthenus: {
+          label: "Acipenser ruthenus",
+          shortLabel: "A. ruthenus",
+          colour: "#8B4513",
+          shape: "triangle"
+        },
+
+        A_nudiventris: {
+          label: "Acipenser nudiventris",
+          shortLabel: "A. nudiventris",
+          colour: "#00CFE8",
+          shape: "diamond"
+        }
+      };
+
+
+      const pressureConfig = {
+        N_melanostomus: {
+          label: "Neogobius melanostomus",
+          shortLabel: "Neogobius melanostomus",
+          type: "category",
+          scientific: true
+        },
+
+        M_leidyi: {
+          label: "Mnemiopsis leidyi",
+          shortLabel: "Mnemiopsis leidyi",
+          type: "category",
+          scientific: true
+        },
+
+        mycE_gene: {
+          label: "mycE gene",
+          shortLabel: "mycE gene",
+          type: "gene"
+        },
+
+        sxtA_gene: {
+          label: "sxtA gene",
+          shortLabel: "sxtA gene",
+          type: "gene"
+        }
+      };
+
+      const categoryPressureLevels = {
+        rare: {
+          label: "Rare (<25%)",
+          popupLabel: "rare",
+          colour: "#F4C20D",
+          textColour: "#24313A"
+        },
+
+        occasional: {
+          label: "Occasional (25–50%)",
+          popupLabel: "occasional",
+          colour: "#F39C12",
+          textColour: "#FFFFFF"
+        },
+
+        frequent: {
+          label: "Frequent (50–75%)",
+          popupLabel: "frequent",
+          colour: "#EF5B0C",
+          textColour: "#FFFFFF"
+        },
+
+        constant: {
+          label: "Constant (>75%)",
+          popupLabel: "constant",
+          colour: "#B42318",
+          textColour: "#FFFFFF"
+        },
+
+        na: {
+          label: "NA (not applicable)",
+          popupLabel: "NA",
+          colour: "#9E9E9E",
+          textColour: "#FFFFFF"
+        }
+      };
+
+      const genePressureLevels = {
+        1: {
+          label: "1 (very low)",
+          colour: "#FFE08A",
+          textColour: "#24313A"
+        },
+
+        2: {
+          label: "2 (low)",
+          colour: "#F4C20D",
+          textColour: "#24313A"
+        },
+
+        3: {
+          label: "3 (moderate)",
+          colour: "#F39C12",
+          textColour: "#FFFFFF"
+        },
+
+        4: {
+          label: "4 (high)",
+          colour: "#EF5B0C",
+          textColour: "#FFFFFF"
+        },
+
+        5: {
+          label: "5 (very high)",
+          colour: "#B42318",
+          textColour: "#FFFFFF"
+        },
+
+        na: {
+          label: "NA (not applicable)",
+          colour: "#9E9E9E",
+          textColour: "#FFFFFF"
+        }
+      };
+
       let currentRaster = null;
       let aoiLayer = null;
       let izobateLayer = null;
       let habitatLayer = null;
       let hatchPattern = null;
-      let isobathLabelLayer = L.layerGroup().addTo(map);
 
-      if (typeof L.StripePattern !== "undefined") {
-        hatchPattern = new L.StripePattern({
-          weight: 2,
-          spaceWeight: 4,
-          color: "#28a745",
-          spaceColor: "transparent",
-          opacity: 0.75,
-          angle: 45
-        });
+      let sturgeonAreas = [];
+      let bioticAreas = [];
+
+      const isobathLabelLayer =
+        L.layerGroup().addTo(map);
+
+      const sturgeonLayer =
+        L.layerGroup().addTo(map);
+
+      const bioticLayer =
+        L.layerGroup().addTo(map);
+
+      if (
+        typeof L.StripePattern !==
+        "undefined"
+      ) {
+        hatchPattern =
+          new L.StripePattern({
+            weight: 2,
+            spaceWeight: 4,
+            color: "#28a745",
+            spaceColor: "transparent",
+            opacity: 0.75,
+            angle: 45
+          });
+
         hatchPattern.addTo(map);
       }
 
-      function updateLegendForTemperature(depth, month) {
-        const range = temperatureRanges[depth][month];
-        document.getElementById("legendTitle").textContent =
-          `${depthLabels[depth]} temperature (°C) - ${monthLabels[month]}`;
-        document.getElementById("minV").textContent = range.min.toFixed(2);
-        document.getElementById("maxV").textContent = range.max.toFixed(2);
-
-        const legendBar = document.getElementById("legendBar");
-        legendBar.classList.remove("salinity-bar", "oxygen-bar", "bathy-bar");
-        legendBar.classList.add("temp-bar");
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
       }
 
-      // function updateLegendForSalinity(depth, month) {
-      //   const range = salinityRanges[depth][month];
-      //   document.getElementById("legendTitle").textContent =
-      //     `${depthLabels[depth]} salinity (‰) - ${monthLabels[month]}`;
-      //   document.getElementById("minV").textContent = range.min.toFixed(2);
-      //   document.getElementById("maxV").textContent = range.max.toFixed(2);
+      function normaliseText(value) {
+        return String(value ?? "")
+          .trim()
+          .toLowerCase();
+      }
 
-      //   const legendBar = document.getElementById("legendBar");
-      //   legendBar.classList.remove("temp-bar", "oxygen-bar", "bathy-bar");
-      //   legendBar.classList.add("salinity-bar");
-      // }
+      function createShapeHtml(
+        speciesKey,
+        extraClass = ""
+      ) {
+        const config =
+          speciesConfig[speciesKey];
 
-      function updateLegendForSalinity(depth, month) {
-        const key = depth === "bottom" ? "default" : month;
-        const range = salinityRanges[depth][key];
+        if (!config) {
+          return "";
+        }
 
-        const titleText =
+        return `
+          <span
+            class="species-shape shape-${config.shape} ${extraClass}"
+            style="--shape-colour:${config.colour};"
+            aria-hidden="true"
+          ></span>
+        `;
+      }
+
+      function getSelectedSpeciesKeys() {
+        return Array
+          .from(
+            document.querySelectorAll(
+              'input[name="speciesFilter"]:checked'
+            )
+          )
+          .map(input => input.value)
+          .filter(key => speciesConfig[key]);
+      }
+
+      function setLegendBarClass(
+        className
+      ) {
+        const bar =
+          document.getElementById(
+            "legendBar"
+          );
+
+        bar.classList.remove(
+          "temp-bar",
+          "salinity-bar",
+          "oxygen-bar",
+          "current-bar",
+          "bathy-bar"
+        );
+
+        bar.classList.add(className);
+      }
+
+      function updateLegendForTemperature(
+        depth,
+        month
+      ) {
+        const range =
+          temperatureRanges[depth][month];
+
+        document.getElementById(
+          "legendTitle"
+        ).textContent =
+          `${depthLabels[depth]} temperature (°C) - ` +
+          `${monthLabels[month]}`;
+
+        document.getElementById(
+          "minV"
+        ).textContent =
+          range.min.toFixed(2);
+
+        document.getElementById(
+          "maxV"
+        ).textContent =
+          range.max.toFixed(2);
+
+        setLegendBarClass("temp-bar");
+      }
+
+      function updateLegendForSalinity(
+        depth,
+        month
+      ) {
+        const key =
           depth === "bottom"
-            ? `${depthLabels[depth]} salinity (‰)`
-            : `${depthLabels[depth]} salinity (‰) - ${monthLabels[month]}`;
+            ? "default"
+            : month;
 
-        document.getElementById("legendTitle").textContent = titleText;
-        document.getElementById("minV").textContent = range.min.toFixed(2);
-        document.getElementById("maxV").textContent = range.max.toFixed(2);
+        const range =
+          salinityRanges[depth][key];
 
-        const legendBar = document.getElementById("legendBar");
-        legendBar.classList.remove("temp-bar", "oxygen-bar", "bathy-bar", "current-bar");
-        legendBar.classList.add("salinity-bar");
+        document.getElementById(
+          "legendTitle"
+        ).textContent =
+          depth === "bottom"
+            ? "Bottom salinity (‰)"
+            : `Surface salinity (‰) - ${monthLabels[month]}`;
+
+        document.getElementById(
+          "minV"
+        ).textContent =
+          range.min.toFixed(2);
+
+        document.getElementById(
+          "maxV"
+        ).textContent =
+          range.max.toFixed(2);
+
+        setLegendBarClass(
+          "salinity-bar"
+        );
       }
 
-      function updateLegendForDissolvedOxygen(month) {
-        const range = dissolvedOxygenRanges[month];
-        document.getElementById("legendTitle").textContent =
-          `Dissolved oxygen (mmol/m3) - ${monthLabels[month]}`;
-        document.getElementById("minV").textContent = range.min.toFixed(2);
-        document.getElementById("maxV").textContent = range.max.toFixed(2);
+      function updateLegendForDissolvedOxygen(
+        month
+      ) {
+        const range =
+          dissolvedOxygenRanges[month];
 
-        const legendBar = document.getElementById("legendBar");
-        legendBar.classList.remove("temp-bar", "salinity-bar", "bathy-bar");
-        legendBar.classList.add("oxygen-bar");
+        document.getElementById(
+          "legendTitle"
+        ).textContent =
+          `Dissolved oxygen (mmol/m3) - ` +
+          `${monthLabels[month]}`;
+
+        document.getElementById(
+          "minV"
+        ).textContent =
+          range.min.toFixed(2);
+
+        document.getElementById(
+          "maxV"
+        ).textContent =
+          range.max.toFixed(2);
+
+        setLegendBarClass(
+          "oxygen-bar"
+        );
       }
 
-      function updateLegendForCurrent(month) {
-        const range = currentRanges[month];
-        document.getElementById("legendTitle").textContent =
-          `Current velocity (m/s) - ${monthLabels[month]}`;
-        document.getElementById("minV").textContent = range.min.toFixed(4);
-        document.getElementById("maxV").textContent = range.max.toFixed(3);
+      function updateLegendForCurrent(
+        month
+      ) {
+        const range =
+          currentRanges[month];
 
-        const legendBar = document.getElementById("legendBar");
-        legendBar.classList.remove("temp-bar", "salinity-bar", "oxygen-bar", "bathy-bar");
-        legendBar.classList.add("current-bar");
+        document.getElementById(
+          "legendTitle"
+        ).textContent =
+          `Current velocity (m/s) - ` +
+          `${monthLabels[month]}`;
+
+        document.getElementById(
+          "minV"
+        ).textContent =
+          range.min.toFixed(4);
+
+        document.getElementById(
+          "maxV"
+        ).textContent =
+          range.max.toFixed(3);
+
+        setLegendBarClass(
+          "current-bar"
+        );
       }
 
       function updateLegendForBathymetry() {
-        document.getElementById("legendTitle").textContent = "Bathymetry (m)";
-        document.getElementById("minV").textContent = bathyRange.min.toFixed(2);
-        document.getElementById("maxV").textContent = bathyRange.max.toFixed(2);
+        document.getElementById(
+          "legendTitle"
+        ).textContent =
+          "Bathymetry (m)";
 
-        const legendBar = document.getElementById("legendBar");
-        legendBar.classList.remove("temp-bar", "salinity-bar", "oxygen-bar");
-        legendBar.classList.add("bathy-bar");
+        document.getElementById(
+          "minV"
+        ).textContent =
+          bathyRange.min.toFixed(2);
+
+        document.getElementById(
+          "maxV"
+        ).textContent =
+          bathyRange.max.toFixed(2);
+
+        setLegendBarClass(
+          "bathy-bar"
+        );
       }
 
-      function makeTemperatureLayer(depth, month) {
-        return L.tileLayer(`${TILE_ROOT}/${depth}/${month}/{z}/{x}/{y}.png`, {
-          minZoom: TILE_MIN_ZOOM,
-          maxZoom: TILE_MAX_ZOOM,
-          tms: false,
-          opacity: 0.85
-        });
+      function makeTileLayer(path) {
+        return L.tileLayer(
+          path,
+          {
+            minZoom: TILE_MIN_ZOOM,
+            maxZoom: TILE_MAX_ZOOM,
+            opacity: 0.85
+          }
+        );
       }
 
-      // function makeSalinityLayer(depth, month) {
-      //   return L.tileLayer(`${TILE_ROOT}/salinity/${depth}/${month}/{z}/{x}/{y}.png`, {
-      //     minZoom: TILE_MIN_ZOOM,
-      //     maxZoom: TILE_MAX_ZOOM,
-      //     tms: false,
-      //     opacity: 0.85
-      //   });
-      // }
-      function makeSalinityLayer(depth, month) {
-        const tilePath =
-          depth === "bottom"
-            ? `${TILE_ROOT}/salinity/bottom/default/{z}/{x}/{y}.png`
-            : `${TILE_ROOT}/salinity/surface/${month}/{z}/{x}/{y}.png`;
+      function updatePanelVisibility() {
+        const layerType =
+          document.getElementById(
+            "layerType"
+          ).value;
 
-        return L.tileLayer(tilePath, {
-          minZoom: TILE_MIN_ZOOM,
-          maxZoom: TILE_MAX_ZOOM,
-          tms: false,
-          opacity: 0.85
-        });
-      }
+        const depth =
+          document.getElementById(
+            "depth"
+          ).value;
 
-      function makeDissolvedOxygenLayer(month) {
-        return L.tileLayer(`${TILE_ROOT}/dissolved_oxygen/${month}/{z}/{x}/{y}.png`, {
-          minZoom: TILE_MIN_ZOOM,
-          maxZoom: TILE_MAX_ZOOM,
-          tms: false,
-          opacity: 0.85
-        });
-      }
+        const depthRow =
+          document.getElementById(
+            "depthRow"
+          );
 
-      function makeCurrentLayer(month) {
-        return L.tileLayer(`${TILE_ROOT}/current/${month}/{z}/{x}/{y}.png`, {
-          minZoom: TILE_MIN_ZOOM,
-          maxZoom: TILE_MAX_ZOOM,
-          tms: false,
-          opacity: 0.85
-        });
-      }
+        const monthRow =
+          document.getElementById(
+            "monthRow"
+          );
 
-      function makeBathymetryLayer() {
-        return L.tileLayer(`${TILE_ROOT}/bathymetry/{z}/{x}/{y}.png`, {
-          minZoom: TILE_MIN_ZOOM,
-          maxZoom: TILE_MAX_ZOOM,
-          tms: false,
-          opacity: 0.85
-        });
-      }
+        const hint =
+          document.getElementById(
+            "panelHint"
+          );
 
-      function updateMonthOptionsForLayer(layerType) {
-  const monthSelect = document.getElementById("month");
-  const currentValue = monthSelect.value;
+        if (layerType === "bathymetry") {
+          depthRow.style.display = "none";
+          monthRow.style.display = "none";
 
-  const allowedMonths = ["february", "march", "april", "september", "october", "november"];
+          hint.textContent =
+            "Bathymetry layer is displayed.";
 
-  if (layerType === "bathymetry") {
-    return;
-  }
-
-  Array.from(monthSelect.options).forEach(option => {
-    option.hidden = !allowedMonths.includes(option.value);
-  });
-
-  if (!allowedMonths.includes(currentValue)) {
-    monthSelect.value = allowedMonths[0];
-  }
-}
-
-
-function updatePanelVisibility() {
-  const layerType = document.getElementById("layerType").value;
-  const depth = document.getElementById("depth").value;
-  const depthRow = document.getElementById("depthRow");
-  const monthRow = document.getElementById("monthRow");
-  const panelHint = document.getElementById("panelHint");
-
-  if (layerType === "bathymetry") {
-    depthRow.style.display = "none";
-    monthRow.style.display = "none";
-    panelHint.textContent = "Bathymetry layer is displayed.";
-  } else if (layerType === "dissolved_oxygen") {
-    depthRow.style.display = "none";
-    monthRow.style.display = "flex";
-    panelHint.textContent = "Select month for dissolved oxygen.";
-  } else if (layerType === "current") {
-    depthRow.style.display = "none";
-    monthRow.style.display = "flex";
-    panelHint.textContent = "Select month for current velocity.";
-  } else if (layerType === "salinity") {
-    depthRow.style.display = "flex";
-
-    if (depth === "bottom") {
-      monthRow.style.display = "none";
-      panelHint.textContent = "Bottom salinity has one fixed map.";
-    } else {
-      monthRow.style.display = "flex";
-      panelHint.textContent = "Select depth and month.";
-    }
-  } else {
-    depthRow.style.display = "flex";
-    monthRow.style.display = "flex";
-    panelHint.textContent = "Select depth and month.";
-  }
-}
-
-
-      function keepOverlaysOnTop() {
-        if (izobateLayer) izobateLayer.bringToFront();
-        if (isobathLabelLayer) isobathLabelLayer.eachLayer(layer => layer.bringToFront());
-        if (habitatLayer && map.hasLayer(habitatLayer)) habitatLayer.bringToFront();
-      }
-
-      function getMidpointFromCoords(coords) {
-        if (!coords || !coords.length) return null;
-        const midIndex = Math.floor(coords.length / 2);
-        const mid = coords[midIndex];
-        if (!mid || mid.length < 2) return null;
-        return [mid[1], mid[0]];
-      }
-
-      function getLabelPointFromGeometry(geometry) {
-        if (!geometry) return null;
-
-        if (geometry.type === "LineString") {
-          return getMidpointFromCoords(geometry.coordinates);
+          return;
         }
 
-        if (geometry.type === "MultiLineString") {
-          let longest = null;
-          let longestLen = 0;
-          geometry.coordinates.forEach(line => {
-            if (line && line.length > longestLen) {
-              longest = line;
-              longestLen = line.length;
+        if (
+          layerType ===
+          "dissolved_oxygen"
+        ) {
+          depthRow.style.display = "none";
+          monthRow.style.display = "flex";
+
+          hint.textContent =
+            "Select month for dissolved oxygen.";
+
+          return;
+        }
+
+        if (layerType === "current") {
+          depthRow.style.display = "none";
+          monthRow.style.display = "flex";
+
+          hint.textContent =
+            "Select month for current velocity.";
+
+          return;
+        }
+
+        if (layerType === "salinity") {
+          depthRow.style.display = "flex";
+
+          if (depth === "bottom") {
+            monthRow.style.display =
+              "none";
+
+            hint.textContent =
+              "Bottom salinity has one fixed map.";
+          } else {
+            monthRow.style.display =
+              "flex";
+
+            hint.textContent =
+              "Select depth and month.";
+          }
+
+          return;
+        }
+
+        depthRow.style.display = "flex";
+        monthRow.style.display = "flex";
+
+        hint.textContent =
+          "Select depth and month.";
+      }
+
+      function refreshRaster() {
+        const layerType =
+          document.getElementById(
+            "layerType"
+          ).value;
+
+        const depth =
+          document.getElementById(
+            "depth"
+          ).value;
+
+        const month =
+          document.getElementById(
+            "month"
+          ).value;
+
+        updatePanelVisibility();
+
+        if (currentRaster) {
+          map.removeLayer(
+            currentRaster
+          );
+        }
+
+        if (layerType === "bathymetry") {
+          currentRaster =
+            makeTileLayer(
+              `${TILE_ROOT}/bathymetry/{z}/{x}/{y}.png`
+            );
+
+          updateLegendForBathymetry();
+        } else if (
+          layerType ===
+          "dissolved_oxygen"
+        ) {
+          currentRaster =
+            makeTileLayer(
+              `${TILE_ROOT}/dissolved_oxygen/` +
+              `${month}/{z}/{x}/{y}.png`
+            );
+
+          updateLegendForDissolvedOxygen(
+            month
+          );
+        } else if (
+          layerType === "current"
+        ) {
+          currentRaster =
+            makeTileLayer(
+              `${TILE_ROOT}/current/` +
+              `${month}/{z}/{x}/{y}.png`
+            );
+
+          updateLegendForCurrent(
+            month
+          );
+        } else if (
+          layerType === "salinity"
+        ) {
+          const path =
+            depth === "bottom"
+              ? `${TILE_ROOT}/salinity/bottom/default/{z}/{x}/{y}.png`
+              : `${TILE_ROOT}/salinity/surface/${month}/{z}/{x}/{y}.png`;
+
+          currentRaster =
+            makeTileLayer(path);
+
+          updateLegendForSalinity(
+            depth,
+            month
+          );
+        } else {
+          currentRaster =
+            makeTileLayer(
+              `${TILE_ROOT}/${depth}/` +
+              `${month}/{z}/{x}/{y}.png`
+            );
+
+          updateLegendForTemperature(
+            depth,
+            month
+          );
+        }
+
+        currentRaster.addTo(map);
+        keepOverlaysOnTop();
+      }
+
+      function keepOverlaysOnTop() {
+        if (izobateLayer) {
+          izobateLayer.bringToFront();
+        }
+
+        isobathLabelLayer.eachLayer(
+          layer => {
+            if (layer.bringToFront) {
+              layer.bringToFront();
             }
-          });
-          return longest ? getMidpointFromCoords(longest) : null;
+          }
+        );
+
+        if (
+          habitatLayer &&
+          map.hasLayer(habitatLayer)
+        ) {
+          habitatLayer.bringToFront();
+        }
+      }
+
+      function getMidpointFromCoords(
+        coordinates
+      ) {
+        if (
+          !coordinates ||
+          !coordinates.length
+        ) {
+          return null;
+        }
+
+        const middle =
+          coordinates[
+            Math.floor(
+              coordinates.length / 2
+            )
+          ];
+
+        if (
+          !middle ||
+          middle.length < 2
+        ) {
+          return null;
+        }
+
+        return [
+          middle[1],
+          middle[0]
+        ];
+      }
+
+      function getLabelPointFromGeometry(
+        geometry
+      ) {
+        if (!geometry) {
+          return null;
+        }
+
+        if (
+          geometry.type ===
+          "LineString"
+        ) {
+          return getMidpointFromCoords(
+            geometry.coordinates
+          );
+        }
+
+        if (
+          geometry.type ===
+          "MultiLineString"
+        ) {
+          let longest = null;
+
+          geometry.coordinates.forEach(
+            line => {
+              if (
+                !longest ||
+                line.length >
+                  longest.length
+              ) {
+                longest = line;
+              }
+            }
+          );
+
+          return longest
+            ? getMidpointFromCoords(
+                longest
+              )
+            : null;
         }
 
         return null;
       }
 
-      function addIsobathLabel(feature, value) {
-        const labelPoint = getLabelPointFromGeometry(feature.geometry);
-        if (!labelPoint) return;
+      function addIsobathLabel(
+        feature,
+        value
+      ) {
+        const point =
+          getLabelPointFromGeometry(
+            feature.geometry
+          );
 
-        const labelMarker = L.marker(labelPoint, {
-          interactive: false,
-          icon: L.divIcon({
-            className: "isobath-text",
-            html: `<div>${value} m</div>`,
-            iconSize: null
-          })
-        });
+        if (!point) {
+          return;
+        }
 
-        isobathLabelLayer.addLayer(labelMarker);
+        isobathLabelLayer.addLayer(
+          L.marker(
+            point,
+            {
+              interactive: false,
+
+              icon: L.divIcon({
+                className:
+                  "isobath-text",
+
+                html:
+                  `<div>${escapeHtml(value)} m</div>`,
+
+                iconSize: null
+              })
+            }
+          )
+        );
       }
 
- 
+      function makeSiteIcon(
+        speciesKeys
+      ) {
+        const visibleKeys =
+          speciesKeys.filter(
+            key => speciesConfig[key]
+          );
 
+        const width =
+          Math.max(
+            14,
+            visibleKeys.length * 16
+          );
 
-function refreshRaster() {
-  const layerType = document.getElementById("layerType").value;
+        const symbols =
+          visibleKeys
+            .map(
+              key => `
+                <span class="site-marker-symbol">
+                  ${createShapeHtml(key)}
+                </span>
+              `
+            )
+            .join("");
 
-  updatePanelVisibility();
+        return L.divIcon({
+          className:
+            "site-marker-icon",
 
-  if (currentRaster) {
-    map.removeLayer(currentRaster);
-  }
+          html: `
+            <div class="site-marker-cluster">
+              ${symbols}
+            </div>
+          `,
 
-  if (layerType === "bathymetry") {
-    currentRaster = makeBathymetryLayer();
-    updateLegendForBathymetry();
-  } else if (layerType === "dissolved_oxygen") {
-    updateMonthOptionsForLayer(layerType);
-    const finalMonth = document.getElementById("month").value;
-    currentRaster = makeDissolvedOxygenLayer(finalMonth);
-    updateLegendForDissolvedOxygen(finalMonth);
-  } else if (layerType === "current") {
-    updateMonthOptionsForLayer(layerType);
-    const finalMonth = document.getElementById("month").value;
-    currentRaster = makeCurrentLayer(finalMonth);
-    updateLegendForCurrent(finalMonth);
-  } else if (layerType === "salinity") {
-  updateMonthOptionsForLayer(layerType);
-  const depth = document.getElementById("depth").value;
-  const finalMonth = document.getElementById("month").value;
+          iconSize: [
+            width,
+            22
+          ],
 
-  currentRaster = makeSalinityLayer(depth, finalMonth);
-  updateLegendForSalinity(depth, finalMonth);
-} else {
-    updateMonthOptionsForLayer(layerType);
-    const depth = document.getElementById("depth").value;
-    const finalMonth = document.getElementById("month").value;
-    currentRaster = makeTemperatureLayer(depth, finalMonth);
-    updateLegendForTemperature(depth, finalMonth);
-  }
+          iconAnchor: [
+            width / 2,
+            11
+          ],
 
-  currentRaster.addTo(map);
-  keepOverlaysOnTop();
-}
+          tooltipAnchor: [
+            0,
+            -14
+          ]
+        });
+      }
 
+      function getObservationLayer() {
+        return document.getElementById(
+          "observationLayer"
+        ).value;
+      }
+
+      function updateSpeciesLegend() {
+        const section =
+          document.getElementById(
+            "speciesLegendSection"
+          );
+
+        const container =
+          document.getElementById(
+            "speciesLegendItems"
+          );
+
+        const selectedKeys =
+          getSelectedSpeciesKeys();
+
+        if (
+          getObservationLayer() !== "edna" ||
+          !selectedKeys.length
+        ) {
+          section.classList.add(
+            "hidden"
+          );
+
+          container.innerHTML = "";
+          return;
+        }
+
+        container.innerHTML =
+          selectedKeys
+            .map(key => {
+              const config =
+                speciesConfig[key];
+
+              return `
+                <div class="species-legend-item">
+                  <span class="species-legend-symbol">
+                    ${createShapeHtml(key)}
+                  </span>
+
+                  <em>
+                    ${escapeHtml(config.label)}
+                  </em>
+                </div>
+              `;
+            })
+            .join("");
+
+        section.classList.remove(
+          "hidden"
+        );
+      }
+
+      function hideObservationPopup() {
+        map.closePopup();
+      }
+
+      function buildAreaPopupHtml(
+        area,
+        visibleSpeciesKeys
+      ) {
+        const waterType =
+          area.waterType ||
+          "Not available";
+
+        const samplingPeriod =
+          area.samplingPeriod ||
+          "Not available";
+
+        const firstSpecies =
+          speciesConfig[
+            visibleSpeciesKeys[0]
+          ];
+
+        const speciesRows =
+          visibleSpeciesKeys
+            .map(key => {
+              const config =
+                speciesConfig[key];
+
+              return `
+                <div
+                  class="detected-species-item"
+                  style="--item-colour:${config.colour};"
+                >
+                  <span class="species-legend-symbol">
+                    ${createShapeHtml(key)}
+                  </span>
+
+                  <em>
+                    ${escapeHtml(config.label)}
+                  </em>
+                </div>
+              `;
+            })
+            .join("");
+
+        return `
+          <div
+            class="sturgeon-popup-card"
+            style="--summary-colour:${firstSpecies?.colour || "#17384f"};"
+          >
+            <div class="species-info-title">
+              ${escapeHtml(
+                area.areaName ||
+                `Area ${area.areaId}`
+              )}
+            </div>
+
+            <div class="detected-species-list">
+              ${speciesRows}
+            </div>
+
+            <div class="site-meta">
+              <div class="site-meta-label">
+                Water type
+              </div>
+
+              <div>
+                ${escapeHtml(waterType)}
+              </div>
+
+              <div class="site-meta-label">
+                Sampling period
+              </div>
+
+              <div>
+                ${escapeHtml(samplingPeriod)}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function areaPassesFilters(
+        area,
+        selectedKeys,
+        waterFilter,
+        periodFilter
+      ) {
+        const visibleSpecies =
+          area.species.filter(
+            key =>
+              selectedKeys.includes(key)
+          );
+
+        if (!visibleSpecies.length) {
+          return false;
+        }
+
+        if (
+          waterFilter !== "all" &&
+          normaliseText(
+            area.waterType
+          ) !== waterFilter
+        ) {
+          return false;
+        }
+
+        if (
+          periodFilter !== "all" &&
+          area.samplingPeriod !==
+            periodFilter
+        ) {
+          return false;
+        }
+
+        return true;
+      }
+
+      function fitObservationBounds(
+        bounds
+      ) {
+        if (!bounds.length) {
+          return;
+        }
+
+        const mobile =
+          window.innerWidth <= 640;
+
+        map.fitBounds(
+          L.latLngBounds(bounds),
+          {
+            paddingTopLeft:
+              mobile
+                ? [30, 100]
+                : [60, 60],
+
+            paddingBottomRight:
+              mobile
+                ? [30, 100]
+                : [60, 60],
+
+            maxZoom: 7
+          }
+        );
+      }
+
+      function refreshSturgeonMarkers({
+        fitToMarkers = false
+      } = {}) {
+        sturgeonLayer.clearLayers();
+        hideObservationPopup();
+        updateSpeciesLegend();
+
+        if (
+          getObservationLayer() !==
+          "edna"
+        ) {
+          return;
+        }
+
+        const selectedKeys =
+          getSelectedSpeciesKeys();
+
+        const waterFilter =
+          document.getElementById(
+            "waterTypeFilter"
+          ).value;
+
+        const periodFilter =
+          document.getElementById(
+            "samplingPeriodFilter"
+          ).value;
+
+        if (!selectedKeys.length) {
+          return;
+        }
+
+        const bounds = [];
+
+        sturgeonAreas.forEach(
+          area => {
+            if (
+              !areaPassesFilters(
+                area,
+                selectedKeys,
+                waterFilter,
+                periodFilter
+              )
+            ) {
+              return;
+            }
+
+            const visibleSpecies =
+              area.species.filter(
+                key =>
+                  selectedKeys.includes(
+                    key
+                  ) &&
+                  speciesConfig[key]
+              );
+
+            const marker =
+              L.marker(
+                [
+                  area.lat,
+                  area.lon
+                ],
+                {
+                  icon:
+                    makeSiteIcon(
+                      visibleSpecies
+                    ),
+
+                  keyboard: true,
+                  zIndexOffset: 1200
+                }
+              );
+
+            const popupHtml =
+              buildAreaPopupHtml(
+                area,
+                visibleSpecies
+              );
+
+            marker.bindPopup(
+              popupHtml,
+              {
+                className: "sturgeon-popup",
+                closeButton: false,
+                autoClose: true,
+                closeOnClick: true,
+                offset: [0, -10]
+              }
+            );
+
+            marker.on(
+              "mouseover",
+              () => marker.openPopup()
+            );
+
+            marker.on(
+              "click",
+              () => marker.openPopup()
+            );
+
+            marker.addTo(
+              sturgeonLayer
+            );
+
+            bounds.push([
+              area.lat,
+              area.lon
+            ]);
+          }
+        );
+
+        if (fitToMarkers) {
+          fitObservationBounds(bounds);
+        }
+      }
+
+      function normaliseSamplingPeriod(
+        value
+      ) {
+        return String(value ?? "")
+          .replace(/\bJune\b/gi, "Jun")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function updateBioticPressureSelectStyle() {
+        const select =
+          document.getElementById(
+            "bioticPressureType"
+          );
+
+        const selectedPressure =
+          pressureConfig[select.value];
+
+        select.classList.toggle(
+          "scientific-selected",
+          Boolean(
+            selectedPressure?.scientific
+          )
+        );
+      }
+
+      function getPressureLevel(
+        pressureKey,
+        rawValue
+      ) {
+        const pressure =
+          pressureConfig[pressureKey];
+
+        if (!pressure) {
+          return categoryPressureLevels.na;
+        }
+
+        if (pressure.type === "gene") {
+          const numericValue =
+            Number(rawValue);
+
+          return (
+            genePressureLevels[
+              numericValue
+            ] ||
+            genePressureLevels.na
+          );
+        }
+
+        const category =
+          normaliseText(rawValue) ||
+          "na";
+
+        return (
+          categoryPressureLevels[
+            category
+          ] ||
+          categoryPressureLevels.na
+        );
+      }
+
+      function formatPressurePopupValue(
+        pressureKey,
+        rawValue
+      ) {
+        const pressure =
+          pressureConfig[pressureKey];
+
+        const level =
+          getPressureLevel(
+            pressureKey,
+            rawValue
+          );
+
+        if (
+          normaliseText(rawValue) === "na" ||
+          rawValue === null ||
+          rawValue === undefined ||
+          rawValue === ""
+        ) {
+          return "NA";
+        }
+
+        if (pressure?.type === "gene") {
+          return level.label;
+        }
+
+        return level.popupLabel ||
+          level.label;
+      }
+
+      function makeBioticIcon(
+        area,
+        pressureKey
+      ) {
+        const level =
+          getPressureLevel(
+            pressureKey,
+            area.pressures[
+              pressureKey
+            ]
+          );
+
+        const areaName =
+          area.areaName ||
+          `Area ${area.areaId}`;
+
+        return L.divIcon({
+          className:
+            "biotic-marker-icon",
+
+          html: `
+            <div
+              class="biotic-pressure-marker"
+              style="--pressure-colour:${level.colour};"
+              title="${escapeHtml(areaName)}"
+              aria-label="${escapeHtml(areaName)}"
+            ></div>
+          `,
+
+          iconSize: [22, 22],
+          iconAnchor: [11, 11],
+          popupAnchor: [0, -14]
+        });
+      }
+
+      function buildBioticPopupHtml(
+        area,
+        selectedPressureKey
+      ) {
+        const selectedLevel =
+          getPressureLevel(
+            selectedPressureKey,
+            area.pressures[
+              selectedPressureKey
+            ]
+          );
+
+        const pressureRows =
+          Object.keys(pressureConfig)
+            .map(key => {
+              const config =
+                pressureConfig[key];
+
+              const level =
+                getPressureLevel(
+                  key,
+                  area.pressures[key]
+                );
+
+              const value =
+                formatPressurePopupValue(
+                  key,
+                  area.pressures[key]
+                );
+
+              const pressureName =
+                config.scientific
+                  ? `<em>${escapeHtml(config.shortLabel)}</em>`
+                  : `<span>${escapeHtml(config.shortLabel)}</span>`;
+
+              return `
+                <div class="biotic-pressure-row">
+                  <div class="biotic-pressure-name">
+                    ${pressureName}
+                  </div>
+
+                  <div
+                    class="biotic-pressure-value"
+                    style="--status-colour:${level.colour};"
+                  >
+                    ${escapeHtml(value)}
+                  </div>
+                </div>
+              `;
+            })
+            .join("");
+
+        return `
+          <div
+            class="biotic-popup-card"
+            style="--summary-colour:${selectedLevel.colour};"
+          >
+            <div class="species-info-title">
+              ${escapeHtml(
+                area.areaName ||
+                `Area ${area.areaId}`
+              )}
+            </div>
+
+            <div class="site-meta">
+              <div class="site-meta-label">
+                Water type
+              </div>
+
+              <div>
+                ${escapeHtml(area.waterType || "Not available")}
+              </div>
+
+              <div class="site-meta-label">
+                Sampling period
+              </div>
+
+              <div>
+                ${escapeHtml(area.samplingPeriod || "Not available")}
+              </div>
+            </div>
+
+            <div class="biotic-popup-divider"></div>
+
+            <div class="biotic-popup-heading">
+              Biotic pressures
+            </div>
+
+            <div class="biotic-pressure-table">
+              ${pressureRows}
+            </div>
+          </div>
+        `;
+      }
+
+      function bioticAreaPassesFilters(
+        area,
+        waterFilter,
+        periodFilter
+      ) {
+        if (
+          waterFilter !== "all" &&
+          normaliseText(
+            area.waterType
+          ) !== waterFilter
+        ) {
+          return false;
+        }
+
+        if (
+          periodFilter !== "all" &&
+          area.samplingPeriod !==
+            periodFilter
+        ) {
+          return false;
+        }
+
+        return true;
+      }
+
+      function updateBioticLegend() {
+        const section =
+          document.getElementById(
+            "bioticLegendSection"
+          );
+
+        const subtitle =
+          document.getElementById(
+            "bioticLegendSubtitle"
+          );
+
+        const container =
+          document.getElementById(
+            "bioticLegendItems"
+          );
+
+        if (
+          getObservationLayer() !==
+          "biotic"
+        ) {
+          section.classList.add(
+            "hidden"
+          );
+
+          subtitle.textContent = "";
+          container.innerHTML = "";
+          return;
+        }
+
+        const pressureKey =
+          document.getElementById(
+            "bioticPressureType"
+          ).value;
+
+        const pressure =
+          pressureConfig[pressureKey];
+
+        subtitle.textContent =
+          pressure?.shortLabel ||
+          "Selected pressure";
+
+        subtitle.classList.toggle(
+          "is-scientific",
+          Boolean(pressure?.scientific)
+        );
+
+        const levels =
+          pressure?.type === "gene"
+            ? [
+                genePressureLevels[1],
+                genePressureLevels[2],
+                genePressureLevels[3],
+                genePressureLevels[4],
+                genePressureLevels[5],
+                genePressureLevels.na
+              ]
+            : [
+                categoryPressureLevels.rare,
+                categoryPressureLevels.occasional,
+                categoryPressureLevels.frequent,
+                categoryPressureLevels.constant,
+                categoryPressureLevels.na
+              ];
+
+        container.innerHTML =
+          levels
+            .map(level => `
+              <div class="pressure-legend-item">
+                <span
+                  class="pressure-legend-swatch"
+                  style="--pressure-colour:${level.colour};"
+                ></span>
+
+                <span>${escapeHtml(level.label)}</span>
+              </div>
+            `)
+            .join("");
+
+        section.classList.remove(
+          "hidden"
+        );
+      }
+
+      function refreshBioticMarkers({
+        fitToMarkers = false
+      } = {}) {
+        bioticLayer.clearLayers();
+        hideObservationPopup();
+        updateBioticLegend();
+
+        if (
+          getObservationLayer() !==
+          "biotic"
+        ) {
+          return;
+        }
+
+        const pressureKey =
+          document.getElementById(
+            "bioticPressureType"
+          ).value;
+
+        const waterFilter =
+          document.getElementById(
+            "bioticWaterTypeFilter"
+          ).value;
+
+        const periodFilter =
+          document.getElementById(
+            "bioticSamplingPeriodFilter"
+          ).value;
+
+        const bounds = [];
+
+        bioticAreas.forEach(area => {
+          if (
+            !bioticAreaPassesFilters(
+              area,
+              waterFilter,
+              periodFilter
+            )
+          ) {
+            return;
+          }
+
+          const marker =
+            L.marker(
+              [
+                area.lat,
+                area.lon
+              ],
+              {
+                icon:
+                  makeBioticIcon(
+                    area,
+                    pressureKey
+                  ),
+
+                keyboard: true,
+                zIndexOffset: 1250
+              }
+            );
+
+          marker.bindPopup(
+            buildBioticPopupHtml(
+              area,
+              pressureKey
+            ),
+            {
+              className: "sturgeon-popup biotic-popup",
+              closeButton: false,
+              autoClose: true,
+              closeOnClick: true,
+              minWidth:
+                window.innerWidth <= 640
+                  ? 250
+                  : 390,
+              maxWidth:
+                window.innerWidth <= 640
+                  ? 280
+                  : 430,
+              offset: [0, -8]
+            }
+          );
+
+          marker.on(
+            "mouseover",
+            () => marker.openPopup()
+          );
+
+          marker.on(
+            "click",
+            () => marker.openPopup()
+          );
+
+          marker.addTo(
+            bioticLayer
+          );
+
+          bounds.push([
+            area.lat,
+            area.lon
+          ]);
+        });
+
+        if (fitToMarkers) {
+          fitObservationBounds(bounds);
+        }
+      }
+
+      function updateObservationControls({
+        fitToMarkers = false
+      } = {}) {
+        const mode =
+          getObservationLayer();
+
+        const legendBox =
+          document.getElementById(
+            "legend"
+          );
+
+        legendBox.classList.toggle(
+          "is-biotic-mode",
+          mode === "biotic"
+        );
+
+        const ednaControls =
+          document.getElementById(
+            "ednaControls"
+          );
+
+        const bioticControls =
+          document.getElementById(
+            "bioticControls"
+          );
+
+        ednaControls.classList.toggle(
+          "hidden",
+          mode !== "edna"
+        );
+
+        bioticControls.classList.toggle(
+          "hidden",
+          mode !== "biotic"
+        );
+
+        sturgeonLayer.clearLayers();
+        bioticLayer.clearLayers();
+        hideObservationPopup();
+        updateSpeciesLegend();
+        updateBioticLegend();
+
+        if (mode === "edna") {
+          refreshSturgeonMarkers({
+            fitToMarkers
+          });
+        } else if (mode === "biotic") {
+          refreshBioticMarkers({
+            fitToMarkers
+          });
+        }
+      }
+
+      function populateSamplingSelect(
+        selectId,
+        periods
+      ) {
+        const select =
+          document.getElementById(
+            selectId
+          );
+
+        select.innerHTML = `
+          <option value="all">
+            All periods
+          </option>
+        `;
+
+        periods.forEach(period => {
+          const option =
+            document.createElement(
+              "option"
+            );
+
+          option.value = period;
+          option.textContent = period;
+
+          select.appendChild(
+            option
+          );
+        });
+      }
+
+      function populateSamplingPeriods() {
+        const periods =
+          Array.from(
+            new Set(
+              sturgeonAreas
+                .map(
+                  area =>
+                    area.samplingPeriod
+                )
+                .filter(Boolean)
+            )
+          ).sort(
+            (a, b) =>
+              a.localeCompare(b)
+          );
+
+        populateSamplingSelect(
+          "samplingPeriodFilter",
+          periods
+        );
+      }
+
+      function populateBioticSamplingPeriods() {
+        const periods =
+          Array.from(
+            new Set(
+              bioticAreas
+                .map(
+                  area =>
+                    area.samplingPeriod
+                )
+                .filter(Boolean)
+            )
+          ).sort(
+            (a, b) =>
+              a.localeCompare(b)
+          );
+
+        populateSamplingSelect(
+          "bioticSamplingPeriodFilter",
+          periods
+        );
+      }
+
+      async function loadSturgeonAreas() {
+        const response =
+          await fetch(
+            STURGEON_EDNA_FILE
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            "eDNA GeoJSON fetch failed: " +
+            response.status
+          );
+        }
+
+        const geojson =
+          await response.json();
+
+        if (
+          geojson.type !==
+            "FeatureCollection" ||
+          !Array.isArray(
+            geojson.features
+          )
+        ) {
+          throw new Error(
+            "Invalid sturgeon eDNA GeoJSON."
+          );
+        }
+
+        sturgeonAreas =
+          geojson.features
+            .map(feature => {
+              const properties =
+                feature.properties ||
+                {};
+
+              const coordinates =
+                feature.geometry
+                  ?.coordinates ||
+                [];
+
+              return {
+                areaId:
+                  properties.area_id,
+
+                areaName:
+                  properties.area_name ||
+                  `Area ${properties.area_id}`,
+
+                lat:
+                  Number(
+                    coordinates[1]
+                  ),
+
+                lon:
+                  Number(
+                    coordinates[0]
+                  ),
+
+                waterType:
+                  properties.water_type ||
+                  "",
+
+                samplingPeriod:
+                  properties.sampling_months ||
+                  "",
+
+                species:
+                  Array.isArray(
+                    properties.species
+                  )
+                    ? properties.species
+                    : []
+              };
+            })
+            .filter(
+              area =>
+                area.areaId !==
+                  undefined &&
+                area.areaId !== null &&
+                Number.isFinite(
+                  area.lat
+                ) &&
+                Number.isFinite(
+                  area.lon
+                )
+            );
+
+        populateSamplingPeriods();
+      }
+
+      async function loadBioticAreas() {
+        const response =
+          await fetch(
+            BIOTIC_PRESSURE_FILE
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            "Biotic pressure GeoJSON fetch failed: " +
+            response.status
+          );
+        }
+
+        const geojson =
+          await response.json();
+
+        if (
+          geojson.type !==
+            "FeatureCollection" ||
+          !Array.isArray(
+            geojson.features
+          )
+        ) {
+          throw new Error(
+            "Invalid biotic pressure GeoJSON."
+          );
+        }
+
+        const coordinatesByArea =
+          new Map(
+            sturgeonAreas.map(area => [
+              String(area.areaId),
+              {
+                lat: area.lat,
+                lon: area.lon,
+                areaName: area.areaName
+              }
+            ])
+          );
+
+        bioticAreas =
+          geojson.features
+            .map(feature => {
+              const properties =
+                feature.properties ||
+                {};
+
+              const areaId =
+                properties.area_id;
+
+              const coordinates =
+                coordinatesByArea.get(
+                  String(areaId)
+                );
+
+              return {
+                areaId,
+
+                areaName:
+                  coordinates?.areaName ||
+                  `Area ${areaId}`,
+
+                lat: coordinates?.lat,
+                lon: coordinates?.lon,
+
+                waterType:
+                  properties.water_type ||
+                  "",
+
+                samplingPeriod:
+                  normaliseSamplingPeriod(
+                    properties.sampling_period
+                  ),
+
+                pressures: {
+                  N_melanostomus:
+                    properties.N_melanostomus,
+
+                  M_leidyi:
+                    properties.M_leidyi,
+
+                  mycE_gene:
+                    properties.mycE_gene,
+
+                  sxtA_gene:
+                    properties.sxtA_gene
+                }
+              };
+            })
+            .filter(
+              area =>
+                area.areaId !==
+                  undefined &&
+                area.areaId !== null &&
+                Number.isFinite(
+                  area.lat
+                ) &&
+                Number.isFinite(
+                  area.lon
+                )
+            );
+
+        populateBioticSamplingPeriods();
+      }
+
+      async function loadObservationData() {
+        try {
+          await loadSturgeonAreas();
+
+          updateObservationControls({
+            fitToMarkers: false
+          });
+        } catch (error) {
+          console.error(
+            "Sturgeon eDNA data not loaded:",
+            error
+          );
+
+          return;
+        }
+
+        try {
+          await loadBioticAreas();
+
+          if (
+            getObservationLayer() ===
+            "biotic"
+          ) {
+            refreshBioticMarkers({
+              fitToMarkers: false
+            });
+          }
+        } catch (error) {
+          console.error(
+            "Biotic pressure data not loaded:",
+            error
+          );
+        }
+      }
 
       fetch(AOI_FILE)
-        .then(r => {
-          if (!r.ok) throw new Error(`AOI fetch failed: ${r.status}`);
-          return r.json();
-        })
-        .then(gj => {
-          aoiLayer = L.geoJSON(gj, {
-            style: {
-              color: "#111",
-              weight: 2,
-              fillColor: "#000",
-              fillOpacity: 0.03
-            }
-          }).addTo(map);
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(
+              "AOI fetch failed: " +
+              response.status
+            );
+          }
 
-          map.fitBounds(aoiLayer.getBounds(), { padding: [20, 20] });
+          return response.json();
         })
-        .catch(err => console.log("AOI not loaded:", err));
+        .then(geojson => {
+          aoiLayer =
+            L.geoJSON(
+              geojson,
+              {
+                style: {
+                  color: "#111111",
+                  weight: 2,
+                  fillColor: "#000000",
+                  fillOpacity: 0.03
+                }
+              }
+            ).addTo(map);
+
+          map.fitBounds(
+            aoiLayer.getBounds(),
+            {
+              padding: [20, 20]
+            }
+          );
+        })
+        .catch(error => {
+          console.log(
+            "AOI not loaded:",
+            error
+          );
+        });
 
       fetch(IZOBATE_FILE)
-        .then(r => {
-          if (!r.ok) throw new Error(`Izobaths fetch failed: ${r.status}`);
-          return r.json();
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(
+              "Isobaths fetch failed: " +
+              response.status
+            );
+          }
+
+          return response.json();
         })
-        .then(gj => {
+        .then(geojson => {
           isobathLabelLayer.clearLayers();
 
-          izobateLayer = L.geoJSON(gj, {
-            style: function() {
-              return {
-                color: "#7f7f7f",
-                weight: 1.5,
-                opacity: 0.9
-              };
-            },
-            onEachFeature: function(feature, layer) {
-              const props = feature.properties || {};
-              const val = props.value ?? props.VALUE ?? props.depth ?? props.DEPTH ?? props.Depth ?? null;
+          izobateLayer =
+            L.geoJSON(
+              geojson,
+              {
+                style: {
+                  color: "#7f7f7f",
+                  weight: 1.5,
+                  opacity: 0.9
+                },
 
-              if (val !== null) {
-                layer.bindPopup(`Isobath: ${val} m`);
-                addIsobathLabel(feature, val);
+                onEachFeature(
+                  feature,
+                  layer
+                ) {
+                  const properties =
+                    feature.properties ||
+                    {};
+
+                  const value =
+                    properties.value ??
+                    properties.VALUE ??
+                    properties.depth ??
+                    properties.DEPTH ??
+                    properties.Depth ??
+                    null;
+
+                  if (value !== null) {
+                    layer.bindPopup(
+                      `Isobath: ${escapeHtml(value)} m`
+                    );
+
+                    addIsobathLabel(
+                      feature,
+                      value
+                    );
+                  }
+                }
               }
-            }
-          }).addTo(map);
+            ).addTo(map);
 
           keepOverlaysOnTop();
         })
-        .catch(err => console.log("Izobaths not loaded:", err));
+        .catch(error => {
+          console.log(
+            "Isobaths not loaded:",
+            error
+          );
+        });
 
       fetch(HABITAT_FILE)
-        .then(r => {
-          if (!r.ok) throw new Error(`Habitat fetch failed: ${r.status}`);
-          return r.json();
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(
+              "Habitat fetch failed: " +
+              response.status
+            );
+          }
+
+          return response.json();
         })
-        .then(gj => {
-          habitatLayer = L.geoJSON(gj, {
-            style: function() {
-              if (hatchPattern) {
-                return {
-                  color: "#28a745",
-                  weight: 1,
-                  fillPattern: hatchPattern,
-                  fillOpacity: 1
-                };
+        .then(geojson => {
+          habitatLayer =
+            L.geoJSON(
+              geojson,
+              {
+                style() {
+                  if (hatchPattern) {
+                    return {
+                      color: "#28a745",
+                      weight: 1,
+
+                      fillPattern:
+                        hatchPattern,
+
+                      fillOpacity: 1
+                    };
+                  }
+
+                  return {
+                    color: "#28a745",
+                    weight: 1,
+                    fillColor: "#b9e7c3",
+                    fillOpacity: 0.35
+                  };
+                }
               }
-              return {
-                color: "#28a745",
-                weight: 1,
-                fillColor: "#b9e7c3",
-                fillOpacity: 0.35
-              };
-            }
-          });
+            );
         })
-        .catch(err => console.log("Habitat not loaded:", err));
+        .catch(error => {
+          console.log(
+            "Habitat not loaded:",
+            error
+          );
+        });
 
+      const offshoreBuoyIcon =
+        L.icon({
+          iconUrl:
+            "buoy_offshore.png",
 
+          iconSize:
+            [40, 40],
 
-      const offshoreBuoyIcon = L.icon({
-        iconUrl: "buoy_offshore.png",
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
-        popupAnchor: [0, -16]
-      });
+          iconAnchor:
+            [20, 20],
 
-      const coastalBuoyIcon = L.icon({
-        iconUrl: "buoy_coastal.png",
-        iconSize: [40, 70],
-        iconAnchor: [20, 65],
-        popupAnchor: [0, -36]
-      });
+          popupAnchor:
+            [0, -16]
+        });
+
+      const coastalBuoyIcon =
+        L.icon({
+          iconUrl:
+            "buoy_coastal.png",
+
+          iconSize:
+            [40, 70],
+
+          iconAnchor:
+            [20, 65],
+
+          popupAnchor:
+            [0, -36]
+        });
 
       fetch("buoys.geojson")
-        .then(res => {
-          if (!res.ok) throw new Error(`Buoys fetch failed: ${res.status}`);
-          return res.json();
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(
+              "Buoys fetch failed: " +
+              response.status
+            );
+          }
+
+          return response.json();
         })
-        .then(data => {
-          buoyLayer = L.geoJSON(data, {
-            pointToLayer: function (feature, latlng) {
-              const type = (feature.properties?.type || "").toLowerCase();
+        .then(geojson => {
+          L.geoJSON(
+            geojson,
+            {
+              pointToLayer(
+                feature,
+                latlng
+              ) {
+                const type =
+                  String(
+                    feature.properties
+                      ?.type ||
+                    ""
+                  ).toLowerCase();
 
-              const icon = type === "coastal"
-                ? coastalBuoyIcon
-                : offshoreBuoyIcon;
+                return L.marker(
+                  latlng,
+                  {
+                    icon:
+                      type === "coastal"
+                        ? coastalBuoyIcon
+                        : offshoreBuoyIcon
+                  }
+                );
+              },
 
-              return L.marker(latlng, { icon });
-            },
-onEachFeature: function (feature, layer) {
-  const props = feature.properties || {};
-  const name = props.name || "Buoy";
-  const type = props.type || "unknown";
-  const infoUrl = "https://www.euxinus.eu/emso_euxinus_network.html";
+              onEachFeature(
+                feature,
+                layer
+              ) {
+                const properties =
+                  feature.properties ||
+                  {};
 
-  layer.bindPopup(`
-    <div class="buoy-popup">
-      <div class="buoy-popup-header">
-        <strong>${name}</strong>
-        <a
-          href="${infoUrl}"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="buoy-popup-link"
-          title="Open EMSO-EUXINUS page"
-          aria-label="Open EMSO-EUXINUS page"
-        >&#9993;</a>
-      </div>
-      <div>Type: ${type}</div>
-    </div>
-  `);
-}
-          }).addTo(map);
+                const name =
+                  properties.name ||
+                  "Buoy";
+
+                const type =
+                  properties.type ||
+                  "unknown";
+
+                const infoUrl =
+                  "https://www.euxinus.eu/" +
+                  "emso_euxinus_network.html";
+
+                layer.bindPopup(`
+                  <div class="buoy-popup">
+                    <div class="buoy-popup-header">
+                      <strong>
+                        ${escapeHtml(name)}
+                      </strong>
+
+                      <a
+                        href="${infoUrl}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="buoy-popup-link"
+                        title="Open EMSO-EUXINUS page"
+                      >
+                        &#9993;
+                      </a>
+                    </div>
+
+                    <div>
+                      Type: ${escapeHtml(type)}
+                    </div>
+                  </div>
+                `);
+              }
+            }
+          ).addTo(map);
 
           keepOverlaysOnTop();
         })
-        .catch(err => console.log("Buoys not loaded:", err));
+        .catch(error => {
+          console.log(
+            "Buoys not loaded:",
+            error
+          );
+        });
 
+      document
+        .getElementById(
+          "habitatToggle"
+        )
+        .addEventListener(
+          "change",
+          function () {
+            if (!habitatLayer) {
+              return;
+            }
 
-      document.getElementById("habitatToggle").addEventListener("change", function() {
-        if (!habitatLayer) return;
+            if (this.checked) {
+              habitatLayer.addTo(map);
+              keepOverlaysOnTop();
+            } else {
+              map.removeLayer(
+                habitatLayer
+              );
+            }
+          }
+        );
 
-        if (this.checked) {
-          habitatLayer.addTo(map);
-          keepOverlaysOnTop();
-        } else {
-          map.removeLayer(habitatLayer);
-        }
-      });
+      document
+        .getElementById(
+          "layerType"
+        )
+        .addEventListener(
+          "change",
+          refreshRaster
+        );
 
+      document
+        .getElementById(
+          "depth"
+        )
+        .addEventListener(
+          "change",
+          refreshRaster
+        );
 
-      
-document.getElementById("layerType").addEventListener("change", function () {
-  updatePanelVisibility();
-  refreshRaster();
-});
+      document
+        .getElementById(
+          "month"
+        )
+        .addEventListener(
+          "change",
+          refreshRaster
+        );
 
+      document
+        .getElementById(
+          "observationLayer"
+        )
+        .addEventListener(
+          "change",
+          () => {
+            updateObservationControls({
+              fitToMarkers: true
+            });
+          }
+        );
 
-      document.getElementById("depth").addEventListener("change", refreshRaster);
-      document.getElementById("month").addEventListener("change", refreshRaster);
+      document
+        .querySelectorAll(
+          'input[name="speciesFilter"]'
+        )
+        .forEach(input => {
+          input.addEventListener(
+            "change",
+            () => {
+              refreshSturgeonMarkers({
+                fitToMarkers: true
+              });
+            }
+          );
+        });
+
+      document
+        .getElementById(
+          "waterTypeFilter"
+        )
+        .addEventListener(
+          "change",
+          () => {
+            refreshSturgeonMarkers({
+              fitToMarkers: true
+            });
+          }
+        );
+
+      document
+        .getElementById(
+          "samplingPeriodFilter"
+        )
+        .addEventListener(
+          "change",
+          () => {
+            refreshSturgeonMarkers({
+              fitToMarkers: true
+            });
+          }
+        );
+
+      document
+        .getElementById(
+          "bioticPressureType"
+        )
+        .addEventListener(
+          "change",
+          () => {
+            updateBioticPressureSelectStyle();
+
+            refreshBioticMarkers({
+              fitToMarkers: false
+            });
+          }
+        );
+
+      document
+        .getElementById(
+          "bioticWaterTypeFilter"
+        )
+        .addEventListener(
+          "change",
+          () => {
+            refreshBioticMarkers({
+              fitToMarkers: true
+            });
+          }
+        );
+
+      document
+        .getElementById(
+          "bioticSamplingPeriodFilter"
+        )
+        .addEventListener(
+          "change",
+          () => {
+            refreshBioticMarkers({
+              fitToMarkers: true
+            });
+          }
+        );
 
       updatePanelVisibility();
+      updateBioticPressureSelectStyle();
       refreshRaster();
+      updateObservationControls({
+        fitToMarkers: false
+      });
+      loadObservationData();
     }
   </script>
 
+  <script>
+    const legend =
+      document.getElementById(
+        "legend"
+      );
 
-<script>
-    const seaSound = document.getElementById("seaSound");
-const soundToggle = document.getElementById("soundToggle");
+    const legendToggle =
+      document.getElementById(
+        "legendToggle"
+      );
 
-let soundEnabled = localStorage.getItem("seaSoundEnabled") === "true";
+    const legendToggleIcon =
+      document.getElementById(
+        "legendToggleIcon"
+      );
 
-function updateSoundIcon() {
-  soundToggle.textContent = soundEnabled ? "🔊" : "🔇";
-}
+    function updateLegendToggleState() {
+      const collapsed =
+        legend.classList.contains(
+          "is-collapsed"
+        );
 
-async function turnSoundOn() {
-  try {
-    seaSound.volume = 0.80;
-    await seaSound.play();
-    soundEnabled = true;
-    localStorage.setItem("seaSoundEnabled", "true");
-    updateSoundIcon();
-  } catch (e) {
-    console.log("Sound blocked by browser.");
-  }
-}
+      legendToggle.setAttribute(
+        "aria-expanded",
+        String(!collapsed)
+      );
 
-function turnSoundOff() {
-  seaSound.pause();
-  seaSound.currentTime = 0;
-  soundEnabled = false;
-  localStorage.setItem("seaSoundEnabled", "false");
-  updateSoundIcon();
-}
-
-soundToggle.addEventListener("click", async () => {
-  if (soundEnabled) {
-    turnSoundOff();
-  } else {
-    await turnSoundOn();
-  }
-});
-
-updateSoundIcon();
-
-// auto play if previously enabled
-window.addEventListener("load", async () => {
-  if (soundEnabled) {
-    try {
-      seaSound.volume = 0.35;
-      await seaSound.play();
-    } catch (e) {
-      console.log("Autoplay blocked.");
+      legendToggleIcon.textContent =
+        collapsed ? "▼" : "▲";
     }
-  }
-});
-</script>
+
+    if (window.innerWidth <= 640) {
+      legend.classList.add(
+        "is-collapsed"
+      );
+    }
+
+    updateLegendToggleState();
+
+    legendToggle.addEventListener(
+      "click",
+      () => {
+        legend.classList.toggle(
+          "is-collapsed"
+        );
+
+        updateLegendToggleState();
+      }
+    );
+
+    window.addEventListener(
+      "resize",
+      () => {
+        if (window.innerWidth > 640) {
+          legend.classList.remove(
+            "is-collapsed"
+          );
+
+          updateLegendToggleState();
+        }
+      }
+    );
+
+    const seaSound =
+      document.getElementById(
+        "seaSound"
+      );
+
+    const soundToggle =
+      document.getElementById(
+        "soundToggle"
+      );
+
+    let soundEnabled =
+      localStorage.getItem(
+        "seaSoundEnabled"
+      ) === "true";
+
+    function updateSoundIcon() {
+      soundToggle.textContent =
+        soundEnabled
+          ? "🔊"
+          : "🔇";
+    }
+
+    async function turnSoundOn() {
+      try {
+        seaSound.volume = 0.8;
+
+        await seaSound.play();
+
+        soundEnabled = true;
+
+        localStorage.setItem(
+          "seaSoundEnabled",
+          "true"
+        );
+
+        updateSoundIcon();
+      } catch (error) {
+        console.log(
+          "Sound blocked by browser.",
+          error
+        );
+      }
+    }
+
+    function turnSoundOff() {
+      seaSound.pause();
+      seaSound.currentTime = 0;
+
+      soundEnabled = false;
+
+      localStorage.setItem(
+        "seaSoundEnabled",
+        "false"
+      );
+
+      updateSoundIcon();
+    }
+
+    soundToggle.addEventListener(
+      "click",
+      async () => {
+        if (soundEnabled) {
+          turnSoundOff();
+        } else {
+          await turnSoundOn();
+        }
+      }
+    );
+
+    updateSoundIcon();
+
+    window.addEventListener(
+      "load",
+      async () => {
+        if (!soundEnabled) {
+          return;
+        }
+
+        try {
+          seaSound.volume = 0.35;
+          await seaSound.play();
+        } catch (error) {
+          console.log(
+            "Autoplay blocked.",
+            error
+          );
+        }
+      }
+    );
+  </script>
 </body>
 </html>
