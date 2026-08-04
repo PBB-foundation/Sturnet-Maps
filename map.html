@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="auth-pending">
 <head>
   <meta charset="utf-8" />
 
@@ -37,6 +37,11 @@
         Roboto,
         Arial,
         sans-serif;
+    }
+
+    /* Keep the map hidden until Firebase confirms authentication. */
+    html.auth-pending body {
+      visibility: hidden;
     }
 
     .panel,
@@ -707,6 +712,9 @@
       font-size: 13px;
       font-weight: 700;
       line-height: 1.3;
+
+      /* Preserve intentional \n line breaks from the GeoJSON title. */
+      white-space: pre-line;
     }
 
     .detected-species-list {
@@ -1666,9 +1674,17 @@
       signOut
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
+    import {
+      getDatabase,
+      ref as databaseRef,
+      get
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyA9QAGa7hG8ZKuJvoAkwVA7v8TOFGmr6R4",
       authDomain: "sturnet-88b6c.firebaseapp.com",
+      databaseURL:
+        "https://sturnet-88b6c-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "sturnet-88b6c",
       storageBucket: "sturnet-88b6c.firebasestorage.app",
       messagingSenderId: "280561154718",
@@ -1681,6 +1697,9 @@
 
     const auth =
       getAuth(app);
+
+    const database =
+      getDatabase(app);
 
     let mapInitialized = false;
     let redirecting = false;
@@ -1700,8 +1719,28 @@
 
     onAuthStateChanged(
       auth,
-      user => {
+      async user => {
         if (!user) {
+          goToLogin();
+          return;
+        }
+
+        try {
+          /*
+            Validate the saved session with Firebase before
+            revealing or initializing the map.
+          */
+          await user.getIdToken(true);
+        } catch (error) {
+          console.error(
+            "Authentication validation failed:",
+            error
+          );
+
+          await signOut(auth).catch(
+            () => {}
+          );
+
           goToLogin();
           return;
         }
@@ -1710,6 +1749,10 @@
           "userEmail"
         ).textContent =
           user.email || "Signed in";
+
+        document.documentElement.classList.remove(
+          "auth-pending"
+        );
 
         if (!mapInitialized) {
           mapInitialized = true;
@@ -1836,22 +1879,6 @@
         metric: true,
         imperial: false
       }).addTo(map);
-
-      const AOI_FILE =
-        "area_of_interest.geojson";
-
-      const IZOBATE_FILE =
-        "izobate_AOI.geojson";
-
-      const HABITAT_FILE =
-        "sturgeon_habitat.geojson";
-
-      const STURGEON_EDNA_FILE =
-        "sturgeon_edna_updated_names.geojson";
-
-
-      const BIOTIC_PRESSURE_FILE =
-        "biotic_pressures.geojson";
 
       const TILE_ROOT =
         "sturnet_database/tiles";
@@ -2184,7 +2211,6 @@
       };
 
       let currentRaster = null;
-      let aoiLayer = null;
       let izobateLayer = null;
       let habitatLayer = null;
       let hatchPattern = null;
@@ -2231,6 +2257,54 @@
         return String(value ?? "")
           .trim()
           .toLowerCase();
+      }
+
+      async function loadProtectedGeoJSON(
+        databasePath
+      ) {
+        const snapshot =
+          await get(
+            databaseRef(
+              database,
+              databasePath
+            )
+          );
+
+        if (!snapshot.exists()) {
+          throw new Error(
+            `No data found at ${databasePath}.`
+          );
+        }
+
+        const value =
+          snapshot.val();
+
+        /*
+          Realtime Database normally returns imported arrays as arrays.
+          This fallback also supports an object with numeric keys.
+        */
+        const features =
+          Array.isArray(value?.features)
+            ? value.features
+            : value?.features &&
+              typeof value.features === "object"
+              ? Object.values(value.features)
+              : null;
+
+        if (
+          value?.type !==
+            "FeatureCollection" ||
+          !Array.isArray(features)
+        ) {
+          throw new Error(
+            `Invalid GeoJSON at ${databasePath}.`
+          );
+        }
+
+        return {
+          ...value,
+          features
+        };
       }
 
       function createShapeHtml(
@@ -2861,6 +2935,12 @@
             visibleSpeciesKeys[0]
           ];
 
+        const areaTitle =
+          escapeHtml(
+            area.areaName ||
+            `Area ${area.areaId}`
+          ).trim();
+
         const speciesRows =
           visibleSpeciesKeys
             .map(key => {
@@ -2889,12 +2969,7 @@
             class="sturgeon-popup-card"
             style="--summary-colour:${firstSpecies?.colour || "#17384f"};"
           >
-            <div class="species-info-title">
-              ${escapeHtml(
-                area.areaName ||
-                `Area ${area.areaId}`
-              )}
-            </div>
+            <div class="species-info-title">${areaTitle}</div>
 
             <div class="detected-species-list">
               ${speciesRows}
@@ -3238,17 +3313,18 @@
             ]
           );
 
+        const areaTitle =
+          escapeHtml(
+            area.areaName ||
+            `Area ${area.areaId}`
+          ).trim();
+
         return `
           <div
             class="biotic-popup-card"
             style="--summary-colour:${selectedLevel.colour};"
           >
-            <div class="species-info-title">
-              ${escapeHtml(
-                area.areaName ||
-                `Area ${area.areaId}`
-              )}
-            </div>
+            <div class="species-info-title">${areaTitle}</div>
 
             <div class="site-meta">
               <div class="site-meta-label">
@@ -3614,20 +3690,10 @@
       }
 
       async function loadSturgeonAreas() {
-        const response =
-          await fetch(
-            STURGEON_EDNA_FILE
-          );
-
-        if (!response.ok) {
-          throw new Error(
-            "eDNA GeoJSON fetch failed: " +
-            response.status
-          );
-        }
-
         const geojson =
-          await response.json();
+          await loadProtectedGeoJSON(
+            "geojson/sturgeon_edna"
+          );
 
         if (
           geojson.type !==
@@ -3704,20 +3770,10 @@
       }
 
       async function loadBioticAreas() {
-        const response =
-          await fetch(
-            BIOTIC_PRESSURE_FILE
-          );
-
-        if (!response.ok) {
-          throw new Error(
-            "Biotic pressure GeoJSON fetch failed: " +
-            response.status
-          );
-        }
-
         const geojson =
-          await response.json();
+          await loadProtectedGeoJSON(
+            "geojson/biotic_pressures"
+          );
 
         if (
           geojson.type !==
@@ -3843,56 +3899,9 @@
         }
       }
 
-      fetch(AOI_FILE)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(
-              "AOI fetch failed: " +
-              response.status
-            );
-          }
-
-          return response.json();
-        })
-        .then(geojson => {
-          aoiLayer =
-            L.geoJSON(
-              geojson,
-              {
-                style: {
-                  color: "#111111",
-                  weight: 2,
-                  fillColor: "#000000",
-                  fillOpacity: 0.03
-                }
-              }
-            ).addTo(map);
-
-          map.fitBounds(
-            aoiLayer.getBounds(),
-            {
-              padding: [20, 20]
-            }
-          );
-        })
-        .catch(error => {
-          console.log(
-            "AOI not loaded:",
-            error
-          );
-        });
-
-      fetch(IZOBATE_FILE)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(
-              "Isobaths fetch failed: " +
-              response.status
-            );
-          }
-
-          return response.json();
-        })
+      loadProtectedGeoJSON(
+        "geojson/isobaths"
+      )
         .then(geojson => {
           isobathLabelLayer.clearLayers();
 
@@ -3945,17 +3954,9 @@
           );
         });
 
-      fetch(HABITAT_FILE)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(
-              "Habitat fetch failed: " +
-              response.status
-            );
-          }
-
-          return response.json();
-        })
+      loadProtectedGeoJSON(
+        "geojson/sturgeon_habitat"
+      )
         .then(geojson => {
           habitatLayer =
             L.geoJSON(
@@ -4021,17 +4022,9 @@
             [0, -36]
         });
 
-      fetch("buoys.geojson")
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(
-              "Buoys fetch failed: " +
-              response.status
-            );
-          }
-
-          return response.json();
-        })
+      loadProtectedGeoJSON(
+        "geojson/buoys"
+      )
         .then(geojson => {
           L.geoJSON(
             geojson,
