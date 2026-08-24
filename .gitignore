@@ -1,4 +1,5 @@
 temp/
+json_compiled_in_firebase_for_geojson/
 
 biotic_pressures.geojson
 buoys.geojson
