@@ -200,6 +200,36 @@
       line-height: 1.3;
     }
 
+    .monitoring-legend-note {
+      margin-top: 6px;
+
+      color: #5a6670;
+      font-size: 10px;
+      line-height: 1.25;
+    }
+
+    .monitoring-marker-swatch {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      background: #00a6ca;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    }
+
+    .monitoring-marker-swatch.is-outside-range {
+      border-color: #111111;
+      background: #d7191c;
+    }
+
+    .monitoring-marker-swatch.is-missing {
+      background: #9e9e9e;
+    }
+
     /* =====================================================
        LOGIN
        ===================================================== */
@@ -776,6 +806,56 @@
       border-left: 6px solid var(--summary-colour, #17384f);
     }
 
+    .monitoring-popup-card {
+      width: 360px;
+      max-width: calc(100vw - 48px);
+      box-sizing: border-box;
+      padding: 14px 16px;
+
+      border-left: 6px solid var(--summary-colour, #17384f);
+    }
+
+    .monitoring-popup-title {
+      margin: 0 0 8px;
+
+      color: #172f40;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .monitoring-popup-summary {
+      margin-bottom: 9px;
+
+      color: #273b4a;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .monitoring-reading-list {
+      display: grid;
+      gap: 0;
+
+      max-height: 180px;
+      overflow-y: auto;
+
+      border-top: 1px solid #e6eaed;
+      font-size: 11px;
+    }
+
+    .monitoring-reading-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+
+      padding: 5px 0;
+      border-bottom: 1px solid #e6eaed;
+    }
+
+    .monitoring-reading-value {
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
     .biotic-popup-divider {
       height: 1px;
       margin: 11px 0 9px;
@@ -1332,6 +1412,17 @@
         <option value="dissolved_oxygen">Dissolved oxygen</option>
         <option value="current">Current</option>
         <option value="bathymetry">Bathymetry</option>
+        <option value="barometric_pressure">Barometric pressure</option>
+        <option value="ph">pH</option>
+        <option value="ph_electrode_potential">pH electrode potential</option>
+        <option value="oxidation_reduction_potential">Oxidation-reduction potential</option>
+        <option value="dissolved_oxygen_saturation">Dissolved oxygen saturation</option>
+        <option value="electrical_conductivity">Electrical conductivity</option>
+        <option value="resistivity">Resistivity</option>
+        <option value="total_dissolved_solids">Total dissolved solids</option>
+        <option value="specific_gravity">Sea-water specific gravity</option>
+        <option value="chlorophyll">Chlorophyll</option>
+        <option value="nitrate">Nitrate</option>
       </select>
     </div>
 
@@ -1351,6 +1442,10 @@
         <option value="february" selected>February</option>
         <option value="march">March</option>
         <option value="april">April</option>
+        <option value="may">May</option>
+        <option value="june">June</option>
+        <option value="july">July</option>
+        <option value="august">August</option>
         <option value="september">September</option>
         <option value="october">October</option>
         <option value="november">November</option>
@@ -1367,6 +1462,14 @@
 
     <div class="hint" id="panelHint">
       Select depth and month.
+    </div>
+
+    <div class="checkbox-row" id="monitoringToggleRow">
+      <input type="checkbox" id="monitoringToggle" checked />
+
+      <label for="monitoringToggle" style="min-width:auto;">
+        Monitoring stations
+      </label>
     </div>
 
     <div class="panel-divider"></div>
@@ -1529,6 +1632,7 @@
         Marker colour shows the selected pressure level.
       </div> -->
     </div>
+
   </div>
 
   <div
@@ -1639,6 +1743,31 @@
       ></div>
 
       <div id="bioticLegendItems"></div>
+    </div>
+
+    <div id="monitoringLegendSection" class="hidden">
+      <div class="legend-divider"></div>
+
+      <div class="legend-title">
+        Monitoring stations
+      </div>
+
+      <div class="pressure-legend-item">
+        <span class="monitoring-marker-swatch"></span>
+        <span>Monthly mean</span>
+      </div>
+
+      <div class="pressure-legend-item">
+        <span class="monitoring-marker-swatch is-outside-range"></span>
+        <span>Outside displayed range</span>
+      </div>
+
+      <div class="pressure-legend-item">
+        <span class="monitoring-marker-swatch is-missing"></span>
+        <span>No data for the selected month</span>
+      </div>
+
+      <div class="monitoring-legend-note" id="monitoringLegendNote"></div>
     </div>
     </div>
   </div>
@@ -2066,9 +2195,35 @@
         february: "February",
         march: "March",
         april: "April",
+        may: "May",
+        june: "June",
+        july: "July",
+        august: "August",
         september: "September",
         october: "October",
         november: "November"
+      };
+
+      const rasterMonthKeys = [
+        "february",
+        "march",
+        "april",
+        "september",
+        "october",
+        "november"
+      ];
+
+      const monthNumberByKey = {
+        february: "02",
+        march: "03",
+        april: "04",
+        may: "05",
+        june: "06",
+        july: "07",
+        august: "08",
+        september: "09",
+        october: "10",
+        november: "11"
       };
 
       const depthLabels = {
@@ -2134,6 +2289,142 @@
           type: "gene"
         }
       };
+
+      const monitoringParameterConfig = {
+        temperature: {
+          property: "temperature_c",
+          label: "Temperature",
+          unit: "°C",
+          decimals: 2,
+          hasRaster: true,
+          convert: value => value
+        },
+
+        salinity: {
+          property: "salinity_ppt",
+          label: "Salinity",
+          unit: "‰",
+          decimals: 2,
+          hasRaster: true,
+          convert: value => value
+        },
+
+        dissolved_oxygen: {
+          property: "dissolved_oxygen_mg_l",
+          label: "Dissolved oxygen",
+          unit: "mmol/m³",
+          rawUnit: "mg/L",
+          decimals: 2,
+          hasRaster: true,
+          convert: value => value * 31.25
+        },
+
+        barometric_pressure: {
+          property: "barometric_pressure_mb",
+          label: "Barometric pressure",
+          unit: "mb",
+          decimals: 0,
+          stationOnly: true,
+          convert: value => value
+        },
+
+        ph: {
+          property: "ph",
+          label: "pH",
+          unit: "pH units",
+          decimals: 2,
+          stationOnly: true,
+          convert: value => value
+        },
+
+        ph_electrode_potential: {
+          property: "ph_mv",
+          label: "pH electrode potential",
+          unit: "mV",
+          decimals: 1,
+          stationOnly: true,
+          convert: value => value
+        },
+
+        oxidation_reduction_potential: {
+          property: "orp_redox_mv",
+          label: "Oxidation-reduction potential",
+          unit: "mV",
+          decimals: 1,
+          stationOnly: true,
+          convert: value => value
+        },
+
+        dissolved_oxygen_saturation: {
+          property: "dissolved_oxygen_percent_saturation",
+          label: "Dissolved oxygen saturation",
+          unit: "%",
+          decimals: 1,
+          stationOnly: true,
+          convert: value => value
+        },
+
+        electrical_conductivity: {
+          property: "electrical_conductivity_us_cm_25c",
+          label: "Electrical conductivity at 25 °C",
+          unit: "µS/cm",
+          decimals: 0,
+          stationOnly: true,
+          convert: value => value
+        },
+
+        resistivity: {
+          property: "resistivity_ohm_cm",
+          label: "Resistivity",
+          unit: "Ω·cm",
+          decimals: 0,
+          stationOnly: true,
+          convert: value => value
+        },
+
+        total_dissolved_solids: {
+          property: "tds_mg_l",
+          label: "Total dissolved solids",
+          unit: "mg/L",
+          decimals: 0,
+          stationOnly: true,
+          convert: value => value
+        },
+
+        specific_gravity: {
+          property: "specific_gravity_sigma_t",
+          label: "Sea-water specific gravity",
+          unit: "σt",
+          decimals: 2,
+          stationOnly: true,
+          convert: value => value
+        },
+
+        chlorophyll: {
+          property: "chlorophyll_ug_l",
+          label: "Chlorophyll",
+          unit: "µg/L",
+          decimals: 2,
+          stationOnly: true,
+          convert: value => value
+        },
+
+        nitrate: {
+          property: "nitrate_mg_l",
+          label: "Nitrate",
+          unit: "mg/L",
+          decimals: 2,
+          stationOnly: true,
+          convert: value => value
+        }
+      };
+
+      const monitoringSources = [
+        {
+          databasePath: "geojson/GTU_monitoring_stations",
+          defaultProvider: "Gebze Technical University (GTU)"
+        }
+      ];
 
       const categoryPressureLevels = {
         rare: {
@@ -2217,6 +2508,7 @@
 
       let sturgeonAreas = [];
       let bioticAreas = [];
+      let monitoringMeasurements = [];
 
       const isobathLabelLayer =
         L.layerGroup().addTo(map);
@@ -2225,6 +2517,9 @@
         L.layerGroup().addTo(map);
 
       const bioticLayer =
+        L.layerGroup().addTo(map);
+
+      const monitoringLayer =
         L.layerGroup().addTo(map);
 
       if (
@@ -2529,12 +2824,36 @@
             "panelHint"
           );
 
+        const monitoringToggleRow =
+          document.getElementById(
+            "monitoringToggleRow"
+          );
+
+        monitoringToggleRow.style.display =
+          isSurfaceMonitoringSelection()
+            ? "flex"
+            : "none";
+
         if (layerType === "bathymetry") {
           depthRow.style.display = "none";
           monthRow.style.display = "none";
 
           hint.textContent =
             "Bathymetry layer is displayed.";
+
+          return;
+        }
+
+        if (
+          monitoringParameterConfig[
+            layerType
+          ]?.stationOnly
+        ) {
+          depthRow.style.display = "none";
+          monthRow.style.display = "flex";
+
+          hint.textContent =
+            "Select month for station observations.";
 
           return;
         }
@@ -2589,6 +2908,67 @@
           "Select depth and month.";
       }
 
+      function updateLegendForStationOnly(
+        layerType,
+        month
+      ) {
+        const config =
+          monitoringParameterConfig[
+            layerType
+          ];
+
+        const range =
+          config && isMonitoringEnabled()
+          ? getMonitoringParameterRange(
+              config
+            )
+          : null;
+
+        let title =
+          layerType === "temperature"
+            ? `Surface temperature (°C) - ${monthLabels[month]}`
+            : layerType === "salinity"
+              ? `Surface salinity (‰) - ${monthLabels[month]}`
+              : `Dissolved oxygen (mmol/m3) - ${monthLabels[month]}`;
+
+        if (config?.stationOnly) {
+          title =
+            `${config.label} (${config.unit}) - ` +
+            `${monthLabels[month] || "Loading"}`;
+        }
+
+        document.getElementById(
+          "legendTitle"
+        ).textContent = title;
+
+        document.getElementById(
+          "minV"
+        ).textContent = range
+          ? range.min.toFixed(
+              config.decimals
+            )
+          : "–";
+
+        document.getElementById(
+          "maxV"
+        ).textContent = range
+          ? range.max.toFixed(
+              config.decimals
+            )
+          : "–";
+
+        setLegendBarClass(
+          layerType === "temperature"
+            ? "temp-bar"
+            : layerType === "salinity"
+              ? "salinity-bar"
+              : layerType ===
+                  "dissolved_oxygen"
+                ? "oxygen-bar"
+                : "temp-bar"
+        );
+      }
+
       function refreshRaster() {
         const layerType =
           document.getElementById(
@@ -2600,17 +2980,47 @@
             "depth"
           ).value;
 
+        updateMonthOptions();
+        updatePanelVisibility();
+
         const month =
           document.getElementById(
             "month"
           ).value;
 
-        updatePanelVisibility();
+        const rasterAvailable =
+          hasRasterForSelection(
+            layerType,
+            depth,
+            month
+          );
 
         if (currentRaster) {
           map.removeLayer(
             currentRaster
           );
+
+          currentRaster = null;
+        }
+
+        if (!rasterAvailable) {
+          updateLegendForStationOnly(
+            layerType,
+            month
+          );
+
+          document.getElementById(
+            "panelHint"
+          ).textContent =
+            !month
+              ? "Loading station observations..."
+              : isMonitoringEnabled()
+                ? "Station observations are displayed for this month."
+                : "No XYZ layer is available for this month.";
+
+          refreshMonitoringMarkers();
+          keepOverlaysOnTop();
+          return;
         }
 
         if (layerType === "bathymetry") {
@@ -2674,6 +3084,7 @@
         }
 
         currentRaster.addTo(map);
+        refreshMonitoringMarkers();
         keepOverlaysOnTop();
       }
 
@@ -2696,6 +3107,14 @@
         ) {
           habitatLayer.bringToFront();
         }
+
+        monitoringLayer.eachLayer(
+          layer => {
+            if (layer.bringToFront) {
+              layer.bringToFront();
+            }
+          }
+        );
       }
 
       function getMidpointFromCoords(
@@ -2861,6 +3280,873 @@
         return document.getElementById(
           "observationLayer"
         ).value;
+      }
+
+      function toFiniteNumber(value) {
+        if (
+          value === null ||
+          value === undefined ||
+          value === ""
+        ) {
+          return null;
+        }
+
+        const number = Number(value);
+
+        return Number.isFinite(number)
+          ? number
+          : null;
+      }
+
+      function getSelectedMonitoringConfig() {
+        const layerType =
+          document.getElementById(
+            "layerType"
+          ).value;
+
+        return monitoringParameterConfig[
+          layerType
+        ] || null;
+      }
+
+      function getSamplingPeriodMonthKey(
+        period
+      ) {
+        const match = String(
+          period || ""
+        ).match(/^(?:\d{4}-)?(\d{2})$/);
+
+        if (!match) {
+          return null;
+        }
+
+        return Object.keys(
+          monthNumberByKey
+        ).find(
+          key =>
+            monthNumberByKey[key] ===
+            match[1]
+        ) || null;
+      }
+
+      function isSurfaceMonitoringSelection() {
+        const layerType =
+          document.getElementById(
+            "layerType"
+          ).value;
+
+        const depth =
+          document.getElementById(
+            "depth"
+          ).value;
+
+        const config =
+          monitoringParameterConfig[
+            layerType
+          ];
+
+        return Boolean(
+          config &&
+          (
+            config.stationOnly ||
+            layerType ===
+              "dissolved_oxygen" ||
+            depth === "surface"
+          )
+        );
+      }
+
+      function isMonitoringEnabled() {
+        return document.getElementById(
+          "monitoringToggle"
+        ).checked &&
+          isSurfaceMonitoringSelection();
+      }
+
+      function getMonitoringMonthKeys() {
+        return Array.from(
+          new Set(
+            monitoringMeasurements
+              .map(measurement =>
+                getSamplingPeriodMonthKey(
+                  measurement.samplingPeriod
+                )
+              )
+              .filter(Boolean)
+          )
+        );
+      }
+
+      function getAvailableMonthKeys() {
+        const layerType =
+          document.getElementById(
+            "layerType"
+          ).value;
+
+        const config =
+          monitoringParameterConfig[
+            layerType
+          ];
+
+        const months = new Set(
+          !config || config.hasRaster
+            ? rasterMonthKeys
+            : []
+        );
+
+        if (
+          config &&
+          isSurfaceMonitoringSelection()
+        ) {
+          getMonitoringMonthKeys()
+            .forEach(
+              month => months.add(month)
+            );
+        }
+
+        return Object.keys(
+          monthNumberByKey
+        ).filter(month =>
+          months.has(month)
+        );
+      }
+
+      function updateMonthOptions() {
+        const select =
+          document.getElementById(
+            "month"
+          );
+
+        const previousValue =
+          select.value;
+
+        const months =
+          getAvailableMonthKeys();
+
+        select.innerHTML = "";
+
+        if (!months.length) {
+          const option =
+            document.createElement(
+              "option"
+            );
+
+          option.value = "";
+          option.textContent =
+            "Loading months...";
+          option.disabled = true;
+          option.selected = true;
+
+          select.appendChild(option);
+          return;
+        }
+
+        months.forEach(month => {
+          const option =
+            document.createElement(
+              "option"
+            );
+
+          option.value = month;
+          option.textContent =
+            monthLabels[month];
+
+          select.appendChild(option);
+        });
+
+        select.value = months.includes(
+          previousValue
+        )
+          ? previousValue
+          : months[0];
+      }
+
+      function hasRasterForSelection(
+        layerType,
+        depth,
+        month
+      ) {
+        if (layerType === "bathymetry") {
+          return true;
+        }
+
+        if (
+          monitoringParameterConfig[
+            layerType
+          ]?.stationOnly
+        ) {
+          return false;
+        }
+
+        if (
+          layerType === "salinity" &&
+          depth === "bottom"
+        ) {
+          return true;
+        }
+
+        return rasterMonthKeys.includes(
+          month
+        );
+      }
+
+      function getRasterRange(
+        layerType,
+        depth,
+        month
+      ) {
+        if (
+          !hasRasterForSelection(
+            layerType,
+            depth,
+            month
+          )
+        ) {
+          return null;
+        }
+
+        if (layerType === "temperature") {
+          return temperatureRanges[
+            depth
+          ][month];
+        }
+
+        if (layerType === "salinity") {
+          return depth === "bottom"
+            ? salinityRanges.bottom.default
+            : salinityRanges.surface[
+                month
+              ];
+        }
+
+        if (
+          layerType ===
+          "dissolved_oxygen"
+        ) {
+          return dissolvedOxygenRanges[
+            month
+          ];
+        }
+
+        return null;
+      }
+
+      function getConvertedMonitoringValue(
+        measurement,
+        config
+      ) {
+        const rawValue =
+          toFiniteNumber(
+            measurement.properties[
+              config.property
+            ]
+          );
+
+        return rawValue === null
+          ? null
+          : config.convert(rawValue);
+      }
+
+      function getMonitoringParameterRange(
+        config
+      ) {
+        const values =
+          monitoringMeasurements
+            .map(measurement =>
+              getConvertedMonitoringValue(
+                measurement,
+                config
+              )
+            )
+            .filter(
+              value => value !== null
+            );
+
+        if (!values.length) {
+          return null;
+        }
+
+        return {
+          min: Math.min(...values),
+          max: Math.max(...values)
+        };
+      }
+
+      function getDisplayedEnvironmentalRange() {
+        const layerType =
+          document.getElementById(
+            "layerType"
+          ).value;
+
+        const depth =
+          document.getElementById(
+            "depth"
+          ).value;
+
+        const month =
+          document.getElementById(
+            "month"
+          ).value;
+
+        return getRasterRange(
+          layerType,
+          depth,
+          month
+        ) || (
+          getSelectedMonitoringConfig()
+            ? getMonitoringParameterRange(
+                getSelectedMonitoringConfig()
+              )
+            : null
+        );
+      }
+
+      function interpolateHexColour(
+        start,
+        end,
+        amount
+      ) {
+        const startValue = parseInt(
+          start.slice(1),
+          16
+        );
+
+        const endValue = parseInt(
+          end.slice(1),
+          16
+        );
+
+        const startRed =
+          (startValue >> 16) & 255;
+        const startGreen =
+          (startValue >> 8) & 255;
+        const startBlue =
+          startValue & 255;
+
+        const endRed =
+          (endValue >> 16) & 255;
+        const endGreen =
+          (endValue >> 8) & 255;
+        const endBlue =
+          endValue & 255;
+
+        const red = Math.round(
+          startRed +
+          (endRed - startRed) * amount
+        );
+
+        const green = Math.round(
+          startGreen +
+          (endGreen - startGreen) * amount
+        );
+
+        const blue = Math.round(
+          startBlue +
+          (endBlue - startBlue) * amount
+        );
+
+        return `#${[
+          red,
+          green,
+          blue
+        ]
+          .map(component =>
+            component
+              .toString(16)
+              .padStart(2, "0")
+          )
+          .join("")}`;
+      }
+
+      function getMonitoringColourStops() {
+        const layerType =
+          document.getElementById(
+            "layerType"
+          ).value;
+
+        if (layerType === "salinity") {
+          return [
+            "#313695",
+            "#4575b4",
+            "#74add1",
+            "#abd9e9",
+            "#e0f3f8",
+            "#fee090",
+            "#fdae61",
+            "#f46d43",
+            "#d73027"
+          ];
+        }
+
+        if (
+          layerType ===
+          "dissolved_oxygen"
+        ) {
+          return [
+            "#d73027",
+            "#f46d43",
+            "#fdae61",
+            "#fee08b",
+            "#d9ef8b",
+            "#91cf60",
+            "#4575b4",
+            "#313695"
+          ];
+        }
+
+        return [
+          "#2c7bb6",
+          "#00a6ca",
+          "#00ccbc",
+          "#90eb9d",
+          "#ffff8c",
+          "#f9d057",
+          "#f29e2e",
+          "#e76818",
+          "#d7191c"
+        ];
+      }
+
+      function getMonitoringMarkerColour(
+        value,
+        range
+      ) {
+        const colourStops =
+          getMonitoringColourStops();
+
+        if (
+          !range ||
+          range.max === range.min
+        ) {
+          return colourStops[4];
+        }
+
+        const ratio = Math.max(
+          0,
+          Math.min(
+            1,
+            (value - range.min) /
+              (range.max - range.min)
+          )
+        );
+
+        const scaled =
+          ratio *
+          (colourStops.length - 1);
+
+        const lowerIndex =
+          Math.floor(scaled);
+
+        const upperIndex = Math.min(
+          colourStops.length - 1,
+          lowerIndex + 1
+        );
+
+        return interpolateHexColour(
+          colourStops[lowerIndex],
+          colourStops[upperIndex],
+          scaled - lowerIndex
+        );
+      }
+
+      function formatMonitoringNumber(
+        value,
+        config
+      ) {
+        if (
+          value === null ||
+          value === undefined ||
+          !Number.isFinite(value)
+        ) {
+          return "Not available";
+        }
+
+        return value.toFixed(
+          config?.decimals ?? 2
+        );
+      }
+
+      function formatMonitoringValue(
+        value,
+        config
+      ) {
+        const formatted =
+          formatMonitoringNumber(
+            value,
+            config
+          );
+
+        return formatted ===
+          "Not available"
+            ? formatted
+            : `${formatted} ${config.unit}`;
+      }
+
+      function updateMonitoringLegend() {
+        const section =
+          document.getElementById(
+            "monitoringLegendSection"
+          );
+
+        if (
+          !isMonitoringEnabled() ||
+          !monitoringMeasurements.length ||
+          !getFilteredMonitoringMeasurements()
+            .length
+        ) {
+          section.classList.add(
+            "hidden"
+          );
+          return;
+        }
+
+        const layerType =
+          document.getElementById(
+            "layerType"
+          ).value;
+
+        const depth =
+          document.getElementById(
+            "depth"
+          ).value;
+
+        const month =
+          document.getElementById(
+            "month"
+          ).value;
+
+        document.getElementById(
+          "monitoringLegendNote"
+        ).textContent =
+          hasRasterForSelection(
+            layerType,
+            depth,
+            month
+          )
+            ? "Marker colours use the same range as the environmental layer."
+            : "Station observations only; no XYZ layer is available for this month.";
+
+        section.classList.remove(
+          "hidden"
+        );
+      }
+
+      function getFilteredMonitoringMeasurements() {
+        const month =
+          document.getElementById(
+            "month"
+          ).value;
+
+        return monitoringMeasurements.filter(
+          measurement =>
+            getSamplingPeriodMonthKey(
+              measurement.samplingPeriod
+            ) === month
+        );
+      }
+
+      function groupMonitoringMeasurements(
+        measurements
+      ) {
+        const groups = new Map();
+
+        measurements.forEach(
+          measurement => {
+            const key = [
+              measurement.provider,
+              measurement.stationId ||
+                `${measurement.lat},${measurement.lon}`
+            ].join("|");
+
+            if (!groups.has(key)) {
+              groups.set(key, {
+                stationId:
+                  measurement.stationId,
+                stationName:
+                  measurement.stationName,
+                provider:
+                  measurement.provider,
+                lat: measurement.lat,
+                lon: measurement.lon,
+                measurements: []
+              });
+            }
+
+            groups.get(key)
+              .measurements.push(
+                measurement
+              );
+          }
+        );
+
+        return Array.from(
+          groups.values()
+        );
+      }
+
+      function buildMonitoringPopupHtml(
+        station,
+        config,
+        average,
+        markerColour,
+        rangeStatus
+      ) {
+        const month =
+          document.getElementById(
+            "month"
+          ).value;
+
+        const readingRows =
+          station.measurements
+            .map((measurement, index) => {
+              const value =
+                getConvertedMonitoringValue(
+                  measurement,
+                  config
+                );
+
+              if (value === null) {
+                return "";
+              }
+
+              const dateLabel =
+                measurement.properties
+                  .measurement_datetime ||
+                measurement.properties
+                  .sample_id ||
+                `Reading ${index + 1}`;
+
+              return `
+                <div class="monitoring-reading-row">
+                  <span>
+                    ${escapeHtml(dateLabel)}
+                  </span>
+
+                  <span class="monitoring-reading-value">
+                    ${escapeHtml(formatMonitoringValue(value, config))}
+                  </span>
+                </div>
+              `;
+            })
+            .filter(Boolean)
+            .join("");
+
+        const validReadingCount =
+          station.measurements.filter(
+            measurement =>
+              getConvertedMonitoringValue(
+                measurement,
+                config
+              ) !== null
+          ).length;
+
+        const readingContent =
+          readingRows || `
+            <div class="monitoring-reading-row">
+              <span>No available readings for this selection.</span>
+              <span></span>
+            </div>
+          `;
+
+        return `
+          <div
+            class="monitoring-popup-card"
+            style="--summary-colour:${markerColour};"
+          >
+            <div class="monitoring-popup-title">
+              ${escapeHtml(station.stationName)}
+            </div>
+
+            <div class="monitoring-popup-summary">
+              <strong>${escapeHtml(config.label)} mean:</strong>
+              ${escapeHtml(formatMonitoringValue(average, config))}
+              <br />
+              <strong>Month:</strong>
+              ${escapeHtml(monthLabels[month])}
+              <br />
+              <strong>Observation:</strong>
+              Surface
+              <br />
+              <strong>Data provider:</strong>
+              ${escapeHtml(station.provider)}
+              ${rangeStatus === "within" || rangeStatus === "missing"
+                ? ""
+                : `<br /><strong>Displayed range:</strong> ${escapeHtml(
+                    rangeStatus === "above"
+                      ? "Above maximum"
+                      : "Below minimum"
+                  )}`}
+              <br />
+              <strong>Readings:</strong>
+              ${validReadingCount}
+            </div>
+
+            <div class="monitoring-reading-list">
+              ${readingContent}
+            </div>
+          </div>
+        `;
+      }
+
+      function refreshMonitoringMarkers({
+        fitToMarkers = false
+      } = {}) {
+        monitoringLayer.clearLayers();
+        hideObservationPopup();
+        updateMonitoringLegend();
+
+        if (!isMonitoringEnabled()) {
+          return;
+        }
+
+        const config =
+          getSelectedMonitoringConfig();
+
+        const range =
+          getDisplayedEnvironmentalRange();
+
+        const filteredMeasurements =
+          getFilteredMonitoringMeasurements();
+
+        if (!filteredMeasurements.length) {
+          return;
+        }
+
+        const stations =
+          groupMonitoringMeasurements(
+            monitoringMeasurements
+          ).map(station => ({
+            ...station,
+
+            measurements:
+              filteredMeasurements.filter(
+                measurement =>
+                  measurement.provider ===
+                    station.provider &&
+                  (
+                    station.stationId
+                      ? measurement.stationId ===
+                        station.stationId
+                      : measurement.lat ===
+                          station.lat &&
+                        measurement.lon ===
+                          station.lon
+                  )
+              )
+          }));
+
+        const bounds = [];
+
+        stations.forEach(station => {
+          const values =
+            station.measurements
+              .map(measurement =>
+                getConvertedMonitoringValue(
+                  measurement,
+                  config
+                )
+              )
+              .filter(
+                value => value !== null
+              );
+
+          const average = values.length
+            ? values.reduce(
+                (total, value) =>
+                  total + value,
+                0
+              ) / values.length
+            : null;
+
+          const markerColour =
+            average === null
+              ? "#9E9E9E"
+              : getMonitoringMarkerColour(
+                  average,
+                  range
+                );
+
+          const rangeStatus =
+            average === null || !range
+              ? "missing"
+              : average < range.min
+                ? "below"
+                : average > range.max
+                  ? "above"
+                  : "within";
+
+          const outsideRange =
+            rangeStatus === "below" ||
+            rangeStatus === "above";
+
+          const marker =
+            L.circleMarker(
+              [
+                station.lat,
+                station.lon
+              ],
+              {
+                radius: 10,
+                color: outsideRange
+                  ? "#111111"
+                  : "#ffffff",
+                weight: outsideRange
+                  ? 3
+                  : 2,
+                opacity: 1,
+                fillColor: markerColour,
+                fillOpacity: 0.95,
+                bubblingMouseEvents: false
+              }
+            );
+
+          marker.bindPopup(
+            buildMonitoringPopupHtml(
+              station,
+              config,
+              average,
+              markerColour,
+              rangeStatus
+            ),
+            {
+              className: "sturgeon-popup monitoring-popup",
+              closeButton: false,
+              autoClose: true,
+              closeOnClick: true,
+              minWidth:
+                window.innerWidth <= 640
+                  ? 250
+                  : 360,
+              maxWidth:
+                window.innerWidth <= 640
+                  ? 280
+                  : 400
+            }
+          );
+
+          marker.on(
+            "mouseover",
+            () => marker.openPopup()
+          );
+
+          marker.on(
+            "click",
+            () => marker.openPopup()
+          );
+
+          marker.addTo(monitoringLayer);
+
+          bounds.push([
+            station.lat,
+            station.lon
+          ]);
+        });
+
+        keepOverlaysOnTop();
+
+        if (fitToMarkers) {
+          fitObservationBounds(bounds);
+        }
       }
 
       function updateSpeciesLegend() {
@@ -3864,39 +5150,137 @@
         populateBioticSamplingPeriods();
       }
 
+      async function loadMonitoringSource(
+        source
+      ) {
+        const geojson =
+          await loadProtectedGeoJSON(
+            source.databasePath
+          );
+
+        if (
+          geojson.type !==
+            "FeatureCollection" ||
+          !Array.isArray(
+            geojson.features
+          )
+        ) {
+          throw new Error(
+            `Invalid monitoring-station GeoJSON at ${source.databasePath}.`
+          );
+        }
+
+        const provider =
+          geojson.metadata?.partner ||
+          source.defaultProvider ||
+          "Data provider not specified";
+
+        return geojson.features
+            .map(feature => {
+              const properties =
+                feature.properties ||
+                {};
+
+              const coordinates =
+                feature.geometry
+                  ?.coordinates ||
+                [];
+
+              return {
+                stationId:
+                  properties.station_id ||
+                  "",
+
+                stationName:
+                  properties.station_name ||
+                  properties.station_id ||
+                  "Monitoring station",
+
+                provider:
+                  properties.data_provider ||
+                  provider,
+
+                samplingPeriod:
+                  properties.sampling_period ||
+                  "",
+
+                lat: Number(
+                  coordinates[1]
+                ),
+
+                lon: Number(
+                  coordinates[0]
+                ),
+
+                properties
+              };
+            })
+            .filter(
+              measurement =>
+                Number.isFinite(
+                  measurement.lat
+                ) &&
+                Number.isFinite(
+                  measurement.lon
+                )
+            );
+      }
+
+      async function loadMonitoringMeasurements() {
+        const sourceMeasurements =
+          await Promise.all(
+            monitoringSources.map(
+              loadMonitoringSource
+            )
+          );
+
+        monitoringMeasurements =
+          sourceMeasurements.flat();
+
+        refreshRaster();
+      }
+
       async function loadObservationData() {
-        try {
-          await loadSturgeonAreas();
+        await Promise.allSettled([
+          loadSturgeonAreas()
+            .then(() => {
+              updateObservationControls({
+                fitToMarkers: false
+              });
+            })
+            .catch(error => {
+              console.error(
+                "Sturgeon eDNA data not loaded:",
+                error
+              );
+            }),
 
-          updateObservationControls({
-            fitToMarkers: false
-          });
-        } catch (error) {
-          console.error(
-            "Sturgeon eDNA data not loaded:",
-            error
-          );
+          loadBioticAreas()
+            .then(() => {
+              if (
+                getObservationLayer() ===
+                "biotic"
+              ) {
+                refreshBioticMarkers({
+                  fitToMarkers: false
+                });
+              }
+            })
+            .catch(error => {
+              console.error(
+                "Biotic pressure data not loaded:",
+                error
+              );
+            }),
 
-          return;
-        }
-
-        try {
-          await loadBioticAreas();
-
-          if (
-            getObservationLayer() ===
-            "biotic"
-          ) {
-            refreshBioticMarkers({
-              fitToMarkers: false
-            });
-          }
-        } catch (error) {
-          console.error(
-            "Biotic pressure data not loaded:",
-            error
-          );
-        }
+          loadMonitoringMeasurements()
+            .catch(error => {
+              console.error(
+                "Monitoring-station data not loaded:",
+                error
+              );
+            })
+        ]);
       }
 
       loadProtectedGeoJSON(
@@ -4167,6 +5551,15 @@
               fitToMarkers: true
             });
           }
+        );
+
+      document
+        .getElementById(
+          "monitoringToggle"
+        )
+        .addEventListener(
+          "change",
+          refreshRaster
         );
 
       document
