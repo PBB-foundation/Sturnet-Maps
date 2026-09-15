@@ -1411,16 +1411,15 @@
         <option value="salinity">Salinity</option>
         <option value="dissolved_oxygen">Dissolved oxygen</option>
         <option value="current">Current</option>
-        <option value="bathymetry">Bathymetry</option>
-        <option value="barometric_pressure">Barometric pressure</option>
+        <!-- <option value="barometric_pressure">Barometric pressure</option> -->
         <option value="ph">pH</option>
-        <option value="ph_electrode_potential">pH electrode potential</option>
-        <option value="oxidation_reduction_potential">Oxidation-reduction potential</option>
-        <option value="dissolved_oxygen_saturation">Dissolved oxygen saturation</option>
-        <option value="electrical_conductivity">Electrical conductivity</option>
-        <option value="resistivity">Resistivity</option>
-        <option value="total_dissolved_solids">Total dissolved solids</option>
-        <option value="specific_gravity">Sea-water specific gravity</option>
+        <!-- <option value="ph_electrode_potential">pH electrode potential</option> -->
+        <!-- <option value="oxidation_reduction_potential">Oxidation-reduction potential</option> -->
+        <!-- <option value="dissolved_oxygen_saturation">Dissolved oxygen saturation</option> -->
+        <!-- <option value="electrical_conductivity">Electrical conductivity</option> -->
+        <!-- <option value="resistivity">Resistivity</option> -->
+        <option value="total_dissolved_solids">TDS</option>
+        <!-- <option value="specific_gravity">Sea-water specific gravity</option> -->
         <option value="chlorophyll">Chlorophyll</option>
         <option value="nitrate">Nitrate</option>
       </select>
@@ -1450,6 +1449,14 @@
         <option value="october">October</option>
         <option value="november">November</option>
       </select>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="bathymetryToggle" checked />
+
+      <label for="bathymetryToggle" style="min-width:auto;">
+        Bathymetry
+      </label>
     </div>
 
     <div class="checkbox-row">
@@ -2502,6 +2509,7 @@
       };
 
       let currentRaster = null;
+      let bathymetryLayer = null;
       let izobateLayer = null;
       let habitatLayer = null;
       let hatchPattern = null;
@@ -2511,7 +2519,7 @@
       let monitoringMeasurements = [];
 
       const isobathLabelLayer =
-        L.layerGroup().addTo(map);
+        L.layerGroup();
 
       const sturgeonLayer =
         L.layerGroup().addTo(map);
@@ -2793,10 +2801,26 @@
           {
             minZoom: TILE_MIN_ZOOM,
             maxZoom: TILE_MAX_ZOOM,
-            opacity: 0.85
+            opacity: 0.85,
+            zIndex: 200
           }
         );
       }
+
+      function makeBathymetryLayer() {
+        return L.tileLayer(
+          `${TILE_ROOT}/bathymetry/{z}/{x}/{y}.png`,
+          {
+            minZoom: TILE_MIN_ZOOM,
+            maxZoom: TILE_MAX_ZOOM,
+            opacity: 0.85,
+            zIndex: 100
+          }
+        );
+      }
+
+      bathymetryLayer =
+        makeBathymetryLayer().addTo(map);
 
       function updatePanelVisibility() {
         const layerType =
@@ -2833,16 +2857,6 @@
           isSurfaceMonitoringSelection()
             ? "flex"
             : "none";
-
-        if (layerType === "bathymetry") {
-          depthRow.style.display = "none";
-          monthRow.style.display = "none";
-
-          hint.textContent =
-            "Bathymetry layer is displayed.";
-
-          return;
-        }
 
         if (
           monitoringParameterConfig[
@@ -3023,14 +3037,7 @@
           return;
         }
 
-        if (layerType === "bathymetry") {
-          currentRaster =
-            makeTileLayer(
-              `${TILE_ROOT}/bathymetry/{z}/{x}/{y}.png`
-            );
-
-          updateLegendForBathymetry();
-        } else if (
+        if (
           layerType ===
           "dissolved_oxygen"
         ) {
@@ -3089,17 +3096,26 @@
       }
 
       function keepOverlaysOnTop() {
-        if (izobateLayer) {
+        if (
+          izobateLayer &&
+          map.hasLayer(izobateLayer)
+        ) {
           izobateLayer.bringToFront();
         }
 
-        isobathLabelLayer.eachLayer(
-          layer => {
-            if (layer.bringToFront) {
-              layer.bringToFront();
+        if (
+          map.hasLayer(
+            isobathLabelLayer
+          )
+        ) {
+          isobathLabelLayer.eachLayer(
+            layer => {
+              if (layer.bringToFront) {
+                layer.bringToFront();
+              }
             }
-          }
-        );
+          );
+        }
 
         if (
           habitatLayer &&
@@ -3466,10 +3482,6 @@
         depth,
         month
       ) {
-        if (layerType === "bathymetry") {
-          return true;
-        }
-
         if (
           monitoringParameterConfig[
             layerType
@@ -5327,7 +5339,16 @@
                   }
                 }
               }
-            ).addTo(map);
+            );
+
+          if (
+            document.getElementById(
+              "bathymetryToggle"
+            ).checked
+          ) {
+            izobateLayer.addTo(map);
+            isobathLabelLayer.addTo(map);
+          }
 
           keepOverlaysOnTop();
         })
@@ -5490,6 +5511,54 @@
             error
           );
         });
+
+      document
+        .getElementById(
+          "bathymetryToggle"
+        )
+        .addEventListener(
+          "change",
+          function () {
+            if (!bathymetryLayer) {
+              return;
+            }
+
+            if (this.checked) {
+              bathymetryLayer.addTo(map);
+              bathymetryLayer.setZIndex(100);
+
+              if (izobateLayer) {
+                izobateLayer.addTo(map);
+              }
+
+              isobathLabelLayer.addTo(map);
+              keepOverlaysOnTop();
+            } else {
+              map.removeLayer(
+                bathymetryLayer
+              );
+
+              if (
+                izobateLayer &&
+                map.hasLayer(izobateLayer)
+              ) {
+                map.removeLayer(
+                  izobateLayer
+                );
+              }
+
+              if (
+                map.hasLayer(
+                  isobathLabelLayer
+                )
+              ) {
+                map.removeLayer(
+                  isobathLabelLayer
+                );
+              }
+            }
+          }
+        );
 
       document
         .getElementById(
