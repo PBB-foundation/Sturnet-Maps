@@ -230,6 +230,36 @@
       background: #9e9e9e;
     }
 
+    .monitoring-marker-swatch.is-imeer {
+      border-radius: 3px;
+      background: #6f42c1;
+    }
+
+    .monitoring-station-icon {
+      overflow: visible !important;
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .monitoring-square-marker {
+      width: 18px;
+      height: 18px;
+      box-sizing: border-box;
+
+      border: 2px solid #ffffff;
+      border-radius: 3px;
+
+      background: var(--monitoring-colour, #6f42c1);
+
+      box-shadow:
+        0 2px 5px rgba(0, 0, 0, 0.38),
+        0 0 0 1px rgba(22, 56, 79, 0.28);
+    }
+
+    .monitoring-square-marker.is-outside-range {
+      border: 3px solid #111111;
+    }
+
     /* =====================================================
        LOGIN
        ===================================================== */
@@ -1438,6 +1468,7 @@
       <label for="month">Month</label>
 
       <select id="month">
+        <option value="january">January</option>
         <option value="february" selected>February</option>
         <option value="march">March</option>
         <option value="april">April</option>
@@ -1448,6 +1479,7 @@
         <option value="september">September</option>
         <option value="october">October</option>
         <option value="november">November</option>
+        <option value="december">December</option>
       </select>
     </div>
 
@@ -1761,7 +1793,12 @@
 
       <div class="pressure-legend-item">
         <span class="monitoring-marker-swatch"></span>
-        <span>Monthly mean</span>
+        <span>GTU monitoring station</span>
+      </div>
+
+      <div class="pressure-legend-item">
+        <span class="monitoring-marker-swatch is-imeer"></span>
+        <span>IMEER monitoring station</span>
       </div>
 
       <div class="pressure-legend-item">
@@ -2199,6 +2236,7 @@
       };
 
       const monthLabels = {
+        january: "January",
         february: "February",
         march: "March",
         april: "April",
@@ -2208,7 +2246,8 @@
         august: "August",
         september: "September",
         october: "October",
-        november: "November"
+        november: "November",
+        december: "December"
       };
 
       const rasterMonthKeys = [
@@ -2221,6 +2260,7 @@
       ];
 
       const monthNumberByKey = {
+        january: "01",
         february: "02",
         march: "03",
         april: "04",
@@ -2230,7 +2270,8 @@
         august: "08",
         september: "09",
         october: "10",
-        november: "11"
+        november: "11",
+        december: "12"
       };
 
       const depthLabels = {
@@ -2429,7 +2470,13 @@
       const monitoringSources = [
         {
           databasePath: "geojson/GTU_monitoring_stations",
-          defaultProvider: "Gebze Technical University (GTU)"
+          defaultProvider: "Gebze Technical University (GTU)",
+          sourceType: "gtu"
+        },
+        {
+          databasePath: "geojson/IMEER_monitoring_measurements",
+          defaultProvider: "IMEER of NASU",
+          sourceType: "imeer"
         }
       ];
 
@@ -2934,7 +2981,8 @@
         const range =
           config && isMonitoringEnabled()
           ? getMonitoringParameterRange(
-              config
+              config,
+              month
             )
           : null;
 
@@ -3379,10 +3427,66 @@
           isSurfaceMonitoringSelection();
       }
 
-      function getMonitoringMonthKeys() {
+      function measurementSupportsMonitoringConfig(
+        measurement,
+        config
+      ) {
+        if (!measurement || !config) {
+          return false;
+        }
+
+        const properties =
+          measurement.properties || {};
+
+        if (
+          measurement.sourceType ===
+            "imeer_meteorological"
+        ) {
+          return (
+            config.property ===
+              "temperature_c" &&
+            (
+              toFiniteNumber(
+                properties.temperature_min_c
+              ) !== null ||
+              toFiniteNumber(
+                properties.temperature_max_c
+              ) !== null
+            )
+          );
+        }
+
+        return toFiniteNumber(
+          properties[config.property]
+        ) !== null;
+      }
+
+      function getMonitoringRelevantMeasurements(
+        config =
+          getSelectedMonitoringConfig()
+      ) {
+        if (!config) {
+          return [];
+        }
+
+        return monitoringMeasurements.filter(
+          measurement =>
+            measurementSupportsMonitoringConfig(
+              measurement,
+              config
+            )
+        );
+      }
+
+      function getMonitoringMonthKeys(
+        config =
+          getSelectedMonitoringConfig()
+      ) {
         return Array.from(
           new Set(
-            monitoringMeasurements
+            getMonitoringRelevantMeasurements(
+              config
+            )
               .map(measurement =>
                 getSamplingPeriodMonthKey(
                   measurement.samplingPeriod
@@ -3414,7 +3518,7 @@
           config &&
           isSurfaceMonitoringSelection()
         ) {
-          getMonitoringMonthKeys()
+          getMonitoringMonthKeys(config)
             .forEach(
               month => months.add(month)
             );
@@ -3560,10 +3664,22 @@
       }
 
       function getMonitoringParameterRange(
-        config
+        config,
+        month = document.getElementById(
+          "month"
+        )?.value || ""
       ) {
         const values =
-          monitoringMeasurements
+          getMonitoringRelevantMeasurements(
+            config
+          )
+            .filter(
+              measurement =>
+                !month ||
+                getSamplingPeriodMonthKey(
+                  measurement.samplingPeriod
+                ) === month
+            )
             .map(measurement =>
               getConvertedMonitoringValue(
                 measurement,
@@ -3607,7 +3723,8 @@
         ) || (
           getSelectedMonitoringConfig()
             ? getMonitoringParameterRange(
-                getSelectedMonitoringConfig()
+                getSelectedMonitoringConfig(),
+                month
               )
             : null
         );
@@ -3800,11 +3917,18 @@
             "monitoringLegendSection"
           );
 
+        const config =
+          getSelectedMonitoringConfig();
+
+        const relevantMeasurements =
+          getMonitoringRelevantMeasurements(
+            config
+          );
+
         if (
           !isMonitoringEnabled() ||
           !monitoringMeasurements.length ||
-          !getFilteredMonitoringMeasurements()
-            .length
+          !relevantMeasurements.length
         ) {
           section.classList.add(
             "hidden"
@@ -3827,16 +3951,26 @@
             "month"
           ).value;
 
+        const hasImeerAirTemperature =
+          layerType === "temperature" &&
+          relevantMeasurements.some(
+            measurement =>
+              measurement.sourceType ===
+                "imeer_meteorological"
+          );
+
         document.getElementById(
           "monitoringLegendNote"
         ).textContent =
-          hasRasterForSelection(
-            layerType,
-            depth,
-            month
-          )
-            ? "Marker colours use the same range as the environmental layer."
-            : "Station observations only; no XYZ layer is available for this month.";
+          hasImeerAirTemperature
+            ? "GTU circles represent water-temperature observations. IMEER squares represent reported air-temperature min–max ranges and are not colour-compared with the sea-temperature raster."
+            : hasRasterForSelection(
+                layerType,
+                depth,
+                month
+              )
+              ? "Marker colours use the same range as the environmental layer."
+              : "Station observations only; no XYZ layer is available for this month.";
 
         section.classList.remove(
           "hidden"
@@ -3849,7 +3983,12 @@
             "month"
           ).value;
 
-        return monitoringMeasurements.filter(
+        const config =
+          getSelectedMonitoringConfig();
+
+        return getMonitoringRelevantMeasurements(
+          config
+        ).filter(
           measurement =>
             getSamplingPeriodMonthKey(
               measurement.samplingPeriod
@@ -3878,6 +4017,23 @@
                   measurement.stationName,
                 provider:
                   measurement.provider,
+                sourceType:
+                  measurement.sourceType ||
+                  "generic",
+                stationType:
+                  measurement.stationType ||
+                  "",
+                waterBody:
+                  measurement.waterBody ||
+                  "",
+                river:
+                  measurement.river ||
+                  "",
+                samplingDepthM:
+                  measurement.samplingDepthM,
+                temperatureType:
+                  measurement.temperatureType ||
+                  "",
                 lat: measurement.lat,
                 lon: measurement.lon,
                 measurements: []
@@ -3896,6 +4052,176 @@
         );
       }
 
+      function getImeerAirTemperatureRange(
+        station
+      ) {
+        const measurement =
+          station.measurements[0];
+
+        if (!measurement) {
+          return null;
+        }
+
+        const properties =
+          measurement.properties || {};
+
+        const min =
+          toFiniteNumber(
+            properties.temperature_min_c
+          );
+
+        const max =
+          toFiniteNumber(
+            properties.temperature_max_c
+          );
+
+        if (
+          min === null &&
+          max === null
+        ) {
+          return null;
+        }
+
+        return {
+          min,
+          max
+        };
+      }
+
+      function buildImeerMeteorologicalPopupHtml(
+        station,
+        markerColour
+      ) {
+        const month =
+          document.getElementById(
+            "month"
+          ).value;
+
+        const temperatureRange =
+          getImeerAirTemperatureRange(
+            station
+          );
+
+        const minText =
+          temperatureRange?.min === null ||
+          temperatureRange?.min === undefined
+            ? "Not available"
+            : `${temperatureRange.min.toFixed(2)} °C`;
+
+        const maxText =
+          temperatureRange?.max === null ||
+          temperatureRange?.max === undefined
+            ? "Not available"
+            : `${temperatureRange.max.toFixed(2)} °C`;
+
+        return `
+          <div
+            class="monitoring-popup-card"
+            style="--summary-colour:${markerColour};"
+          >
+            <div class="monitoring-popup-title">
+              ${escapeHtml(station.stationName)}
+            </div>
+
+            <div class="monitoring-popup-summary">
+              <strong>Parameter:</strong>
+              ${escapeHtml(
+                station.temperatureType ||
+                "Air temperature"
+              )}
+              <br />
+              <strong>Month:</strong>
+              ${escapeHtml(monthLabels[month])} 2025
+              <br />
+              <strong>Minimum:</strong>
+              ${escapeHtml(minText)}
+              <br />
+              <strong>Maximum:</strong>
+              ${escapeHtml(maxText)}
+              <br />
+              <strong>River:</strong>
+              ${escapeHtml(
+                station.river ||
+                station.waterBody ||
+                "Not available"
+              )}
+              <br />
+              <strong>Data provider:</strong>
+              ${escapeHtml(station.provider)}
+            </div>
+
+            <div class="monitoring-legend-note">
+              Reported values are the monthly minimum and maximum of daily mean air temperature. No monthly mean has been inferred.
+            </div>
+          </div>
+        `;
+      }
+
+      function buildImeerWaterQualityPopupHtml(
+        station,
+        config,
+        average,
+        markerColour,
+        rangeStatus
+      ) {
+        const month =
+          document.getElementById(
+            "month"
+          ).value;
+
+        const depthText =
+          Number.isFinite(
+            station.samplingDepthM
+          )
+            ? `${station.samplingDepthM} m`
+            : "Not available";
+
+        return `
+          <div
+            class="monitoring-popup-card"
+            style="--summary-colour:${markerColour};"
+          >
+            <div class="monitoring-popup-title">
+              ${escapeHtml(station.stationName)}
+            </div>
+
+            <div class="monitoring-popup-summary">
+              <strong>${escapeHtml(config.label)}:</strong>
+              ${escapeHtml(
+                formatMonitoringValue(
+                  average,
+                  config
+                )
+              )}
+              <br />
+              <strong>Month:</strong>
+              ${escapeHtml(monthLabels[month])} 2025
+              <br />
+              <strong>Sampling depth:</strong>
+              ${escapeHtml(depthText)}
+              <br />
+              <strong>Water body:</strong>
+              ${escapeHtml(
+                station.waterBody ||
+                station.river ||
+                "Not available"
+              )}
+              <br />
+              <strong>Data provider:</strong>
+              ${escapeHtml(station.provider)}
+              ${rangeStatus === "within" ||
+                rangeStatus === "missing"
+                ? ""
+                : `<br /><strong>Displayed range:</strong> ${escapeHtml(
+                    rangeStatus === "above"
+                      ? "Above maximum"
+                      : "Below minimum"
+                  )}`}
+            </div>
+          </div>
+        `;
+      }
+
       function buildMonitoringPopupHtml(
         station,
         config,
@@ -3903,6 +4229,29 @@
         markerColour,
         rangeStatus
       ) {
+        if (
+          station.sourceType ===
+            "imeer_meteorological"
+        ) {
+          return buildImeerMeteorologicalPopupHtml(
+            station,
+            markerColour
+          );
+        }
+
+        if (
+          station.sourceType ===
+            "imeer_water_quality"
+        ) {
+          return buildImeerWaterQualityPopupHtml(
+            station,
+            config,
+            average,
+            markerColour,
+            rangeStatus
+          );
+        }
+
         const month =
           document.getElementById(
             "month"
@@ -4000,6 +4349,39 @@
         `;
       }
 
+      function makeImeerMonitoringMarker(
+        station,
+        markerColour,
+        outsideRange
+      ) {
+        return L.marker(
+          [
+            station.lat,
+            station.lon
+          ],
+          {
+            keyboard: true,
+            zIndexOffset: 1350,
+
+            icon: L.divIcon({
+              className:
+                "monitoring-station-icon",
+
+              html: `
+                <div
+                  class="monitoring-square-marker${outsideRange ? " is-outside-range" : ""}"
+                  style="--monitoring-colour:${markerColour};"
+                ></div>
+              `,
+
+              iconSize: [18, 18],
+              iconAnchor: [9, 9],
+              popupAnchor: [0, -12]
+            })
+          }
+        );
+      }
+
       function refreshMonitoringMarkers({
         fitToMarkers = false
       } = {}) {
@@ -4014,19 +4396,28 @@
         const config =
           getSelectedMonitoringConfig();
 
+        if (!config) {
+          return;
+        }
+
         const range =
           getDisplayedEnvironmentalRange();
+
+        const relevantMeasurements =
+          getMonitoringRelevantMeasurements(
+            config
+          );
+
+        if (!relevantMeasurements.length) {
+          return;
+        }
 
         const filteredMeasurements =
           getFilteredMonitoringMeasurements();
 
-        if (!filteredMeasurements.length) {
-          return;
-        }
-
         const stations =
           groupMonitoringMeasurements(
-            monitoringMeasurements
+            relevantMeasurements
           ).map(station => ({
             ...station,
 
@@ -4050,6 +4441,10 @@
         const bounds = [];
 
         stations.forEach(station => {
+          const isImeerMeteorological =
+            station.sourceType ===
+              "imeer_meteorological";
+
           const values =
             station.measurements
               .map(measurement =>
@@ -4070,47 +4465,67 @@
               ) / values.length
             : null;
 
+          const hasImeerRange =
+            isImeerMeteorological &&
+            Boolean(
+              getImeerAirTemperatureRange(
+                station
+              )
+            );
+
           const markerColour =
-            average === null
-              ? "#9E9E9E"
-              : getMonitoringMarkerColour(
-                  average,
-                  range
-                );
+            hasImeerRange
+              ? "#6f42c1"
+              : average === null
+                ? "#9E9E9E"
+                : getMonitoringMarkerColour(
+                    average,
+                    range
+                  );
 
           const rangeStatus =
-            average === null || !range
-              ? "missing"
-              : average < range.min
-                ? "below"
-                : average > range.max
-                  ? "above"
-                  : "within";
+            hasImeerRange
+              ? "range"
+              : average === null || !range
+                ? "missing"
+                : average < range.min
+                  ? "below"
+                  : average > range.max
+                    ? "above"
+                    : "within";
 
           const outsideRange =
             rangeStatus === "below" ||
             rangeStatus === "above";
 
           const marker =
-            L.circleMarker(
-              [
-                station.lat,
-                station.lon
-              ],
-              {
-                radius: 10,
-                color: outsideRange
-                  ? "#111111"
-                  : "#ffffff",
-                weight: outsideRange
-                  ? 3
-                  : 2,
-                opacity: 1,
-                fillColor: markerColour,
-                fillOpacity: 0.95,
-                bubblingMouseEvents: false
-              }
-            );
+            station.sourceType?.startsWith(
+              "imeer_"
+            )
+              ? makeImeerMonitoringMarker(
+                  station,
+                  markerColour,
+                  outsideRange
+                )
+              : L.circleMarker(
+                  [
+                    station.lat,
+                    station.lon
+                  ],
+                  {
+                    radius: 10,
+                    color: outsideRange
+                      ? "#111111"
+                      : "#ffffff",
+                    weight: outsideRange
+                      ? 3
+                      : 2,
+                    opacity: 1,
+                    fillColor: markerColour,
+                    fillOpacity: 0.95,
+                    bubblingMouseEvents: false
+                  }
+                );
 
           marker.bindPopup(
             buildMonitoringPopupHtml(
@@ -5212,6 +5627,33 @@
                   properties.data_provider ||
                   provider,
 
+                sourceType:
+                  properties.source_type ||
+                  source.sourceType ||
+                  "generic",
+
+                stationType:
+                  properties.station_type ||
+                  "",
+
+                waterBody:
+                  properties.water_body ||
+                  "",
+
+                river:
+                  properties.river ||
+                  "",
+
+                samplingDepthM:
+                  toFiniteNumber(
+                    properties.sampling_depth_m ??
+                    properties.depth_m
+                  ),
+
+                temperatureType:
+                  properties.temperature_type ||
+                  "",
+
                 samplingPeriod:
                   properties.sampling_period ||
                   "",
@@ -5239,15 +5681,34 @@
       }
 
       async function loadMonitoringMeasurements() {
-        const sourceMeasurements =
-          await Promise.all(
+        const sourceResults =
+          await Promise.allSettled(
             monitoringSources.map(
               loadMonitoringSource
             )
           );
 
+        sourceResults.forEach(
+          (result, index) => {
+            if (result.status === "rejected") {
+              console.error(
+                `Monitoring source not loaded: ${monitoringSources[index].databasePath}`,
+                result.reason
+              );
+            }
+          }
+        );
+
         monitoringMeasurements =
-          sourceMeasurements.flat();
+          sourceResults
+            .filter(
+              result =>
+                result.status ===
+                  "fulfilled"
+            )
+            .flatMap(
+              result => result.value
+            );
 
         refreshRaster();
       }
