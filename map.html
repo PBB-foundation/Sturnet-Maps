@@ -200,14 +200,6 @@
       line-height: 1.3;
     }
 
-    .monitoring-legend-note {
-      margin-top: 6px;
-
-      color: #5a6670;
-      font-size: 10px;
-      line-height: 1.25;
-    }
-
     .monitoring-marker-swatch {
       display: inline-flex;
       align-items: center;
@@ -223,41 +215,14 @@
 
     .monitoring-marker-swatch.is-outside-range {
       border-color: #111111;
-      background: #d7191c;
     }
 
     .monitoring-marker-swatch.is-missing {
       background: #9e9e9e;
     }
 
-    .monitoring-marker-swatch.is-imeer {
-      border-radius: 3px;
+    .monitoring-marker-swatch.is-air-temperature {
       background: #6f42c1;
-    }
-
-    .monitoring-station-icon {
-      overflow: visible !important;
-      background: transparent !important;
-      border: none !important;
-    }
-
-    .monitoring-square-marker {
-      width: 18px;
-      height: 18px;
-      box-sizing: border-box;
-
-      border: 2px solid #ffffff;
-      border-radius: 3px;
-
-      background: var(--monitoring-colour, #6f42c1);
-
-      box-shadow:
-        0 2px 5px rgba(0, 0, 0, 0.38),
-        0 0 0 1px rgba(22, 56, 79, 0.28);
-    }
-
-    .monitoring-square-marker.is-outside-range {
-      border: 3px solid #111111;
     }
 
     /* =====================================================
@@ -837,7 +802,7 @@
     }
 
     .monitoring-popup-card {
-      width: 360px;
+      width: 300px;
       max-width: calc(100vw - 48px);
       box-sizing: border-box;
       padding: 14px 16px;
@@ -854,36 +819,11 @@
     }
 
     .monitoring-popup-summary {
-      margin-bottom: 9px;
+      margin-bottom: 0;
 
       color: #273b4a;
       font-size: 12px;
       line-height: 1.35;
-    }
-
-    .monitoring-reading-list {
-      display: grid;
-      gap: 0;
-
-      max-height: 180px;
-      overflow-y: auto;
-
-      border-top: 1px solid #e6eaed;
-      font-size: 11px;
-    }
-
-    .monitoring-reading-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 10px;
-
-      padding: 5px 0;
-      border-bottom: 1px solid #e6eaed;
-    }
-
-    .monitoring-reading-value {
-      font-weight: 700;
-      white-space: nowrap;
     }
 
     .biotic-popup-divider {
@@ -1792,18 +1732,23 @@
       </div>
 
       <div class="pressure-legend-item">
-        <span class="monitoring-marker-swatch"></span>
-        <span>GTU monitoring station</span>
+        <span class="monitoring-marker-swatch" id="monitoringStationSwatch"></span>
+        <span>Monitoring station</span>
       </div>
 
       <div class="pressure-legend-item">
-        <span class="monitoring-marker-swatch is-imeer"></span>
-        <span>IMEER monitoring station</span>
+        <span class="monitoring-marker-swatch is-outside-range" id="monitoringBelowSwatch"></span>
+        <span>Below displayed minimum</span>
       </div>
 
       <div class="pressure-legend-item">
-        <span class="monitoring-marker-swatch is-outside-range"></span>
-        <span>Outside displayed range</span>
+        <span class="monitoring-marker-swatch is-outside-range" id="monitoringAboveSwatch"></span>
+        <span>Above displayed maximum</span>
+      </div>
+
+      <div class="pressure-legend-item hidden" id="monitoringAirTemperatureLegend">
+        <span class="monitoring-marker-swatch is-air-temperature"></span>
+        <span>Air temperature (min–max)</span>
       </div>
 
       <div class="pressure-legend-item">
@@ -1811,7 +1756,6 @@
         <span>No data for the selected month</span>
       </div>
 
-      <div class="monitoring-legend-note" id="monitoringLegendNote"></div>
     </div>
     </div>
   </div>
@@ -2734,23 +2678,14 @@
       }
 
       function updateLegendForSalinity(
-        depth,
         month
       ) {
-        const key =
-          depth === "bottom"
-            ? "default"
-            : month;
-
-        const range =
-          salinityRanges[depth][key];
+        const range = salinityRanges.surface[month];
 
         document.getElementById(
           "legendTitle"
         ).textContent =
-          depth === "bottom"
-            ? "Bottom salinity (‰)"
-            : `Surface salinity (‰) - ${monthLabels[month]}`;
+          `Surface salinity (‰) - ${monthLabels[month]}`;
 
         document.getElementById(
           "minV"
@@ -2869,15 +2804,16 @@
       bathymetryLayer =
         makeBathymetryLayer().addTo(map);
 
+      function getSelectedRasterDepth(layerType) {
+        return layerType === "salinity"
+          ? "surface"
+          : document.getElementById("depth").value;
+      }
+
       function updatePanelVisibility() {
         const layerType =
           document.getElementById(
             "layerType"
-          ).value;
-
-        const depth =
-          document.getElementById(
-            "depth"
           ).value;
 
         const depthRow =
@@ -2901,7 +2837,7 @@
           );
 
         monitoringToggleRow.style.display =
-          isSurfaceMonitoringSelection()
+          isMonitoringSelection()
             ? "flex"
             : "none";
 
@@ -2943,21 +2879,10 @@
         }
 
         if (layerType === "salinity") {
-          depthRow.style.display = "flex";
+          depthRow.style.display = "none";
+          monthRow.style.display = "flex";
 
-          if (depth === "bottom") {
-            monthRow.style.display =
-              "none";
-
-            hint.textContent =
-              "Bottom salinity has one fixed map.";
-          } else {
-            monthRow.style.display =
-              "flex";
-
-            hint.textContent =
-              "Select depth and month.";
-          }
+          hint.textContent = "Select month for salinity.";
 
           return;
         }
@@ -3037,10 +2962,7 @@
             "layerType"
           ).value;
 
-        const depth =
-          document.getElementById(
-            "depth"
-          ).value;
+        const depth = getSelectedRasterDepth(layerType);
 
         updateMonthOptions();
         updatePanelVisibility();
@@ -3113,18 +3035,12 @@
         } else if (
           layerType === "salinity"
         ) {
-          const path =
-            depth === "bottom"
-              ? `${TILE_ROOT}/salinity/bottom/default/{z}/{x}/{y}.png`
-              : `${TILE_ROOT}/salinity/surface/${month}/{z}/{x}/{y}.png`;
+          const path = `${TILE_ROOT}/salinity/surface/${month}/{z}/{x}/{y}.png`;
 
           currentRaster =
             makeTileLayer(path);
 
-          updateLegendForSalinity(
-            depth,
-            month
-          );
+          updateLegendForSalinity(month);
         } else {
           currentRaster =
             makeTileLayer(
@@ -3393,7 +3309,7 @@
         ) || null;
       }
 
-      function isSurfaceMonitoringSelection() {
+      function isMonitoringSelection() {
         const layerType =
           document.getElementById(
             "layerType"
@@ -3413,6 +3329,7 @@
           config &&
           (
             config.stationOnly ||
+            layerType === "salinity" ||
             layerType ===
               "dissolved_oxygen" ||
             depth === "surface"
@@ -3424,7 +3341,7 @@
         return document.getElementById(
           "monitoringToggle"
         ).checked &&
-          isSurfaceMonitoringSelection();
+          isMonitoringSelection();
       }
 
       function measurementSupportsMonitoringConfig(
@@ -3516,7 +3433,7 @@
 
         if (
           config &&
-          isSurfaceMonitoringSelection()
+          isMonitoringSelection()
         ) {
           getMonitoringMonthKeys(config)
             .forEach(
@@ -3594,13 +3511,6 @@
           return false;
         }
 
-        if (
-          layerType === "salinity" &&
-          depth === "bottom"
-        ) {
-          return true;
-        }
-
         return rasterMonthKeys.includes(
           month
         );
@@ -3628,11 +3538,7 @@
         }
 
         if (layerType === "salinity") {
-          return depth === "bottom"
-            ? salinityRanges.bottom.default
-            : salinityRanges.surface[
-                month
-              ];
+          return salinityRanges.surface[month];
         }
 
         if (
@@ -3706,10 +3612,7 @@
             "layerType"
           ).value;
 
-        const depth =
-          document.getElementById(
-            "depth"
-          ).value;
+        const depth = getSelectedRasterDepth(layerType);
 
         const month =
           document.getElementById(
@@ -3936,41 +3839,26 @@
           return;
         }
 
-        const layerType =
-          document.getElementById(
-            "layerType"
-          ).value;
-
-        const depth =
-          document.getElementById(
-            "depth"
-          ).value;
-
-        const month =
-          document.getElementById(
-            "month"
-          ).value;
-
-        const hasImeerAirTemperature =
-          layerType === "temperature" &&
-          relevantMeasurements.some(
-            measurement =>
-              measurement.sourceType ===
-                "imeer_meteorological"
+        const hasAirTemperatureRange =
+          config?.property === "temperature_c" &&
+          getFilteredMonitoringMeasurements().some(measurement =>
+            measurement.sourceType === "imeer_meteorological" &&
+            Boolean(getImeerAirTemperatureRange({ measurements: [measurement] }))
           );
 
-        document.getElementById(
-          "monitoringLegendNote"
-        ).textContent =
-          hasImeerAirTemperature
-            ? "GTU circles represent water-temperature observations. IMEER squares represent reported air-temperature min–max ranges and are not colour-compared with the sea-temperature raster."
-            : hasRasterForSelection(
-                layerType,
-                depth,
-                month
-              )
-              ? "Marker colours use the same range as the environmental layer."
-              : "Station observations only; no XYZ layer is available for this month.";
+        document.getElementById("monitoringAirTemperatureLegend").classList.toggle(
+          "hidden",
+          !hasAirTemperatureRange
+        );
+
+        const colourStops = getMonitoringColourStops();
+
+        document.getElementById("monitoringStationSwatch").style.background =
+          `linear-gradient(90deg, ${colourStops.join(", ")})`;
+        document.getElementById("monitoringBelowSwatch").style.background =
+          colourStops[0];
+        document.getElementById("monitoringAboveSwatch").style.background =
+          colourStops[colourStops.length - 1];
 
         section.classList.remove(
           "hidden"
@@ -4088,31 +3976,22 @@
         };
       }
 
+      function getMonitoringStationDisplayName(station) {
+        return String(station.stationName || "Monitoring station")
+          .replace(/^Sample\s+\d+\s*:\s*/i, "");
+      }
+
       function buildImeerMeteorologicalPopupHtml(
         station,
         markerColour
       ) {
-        const month =
-          document.getElementById(
-            "month"
-          ).value;
-
-        const temperatureRange =
-          getImeerAirTemperatureRange(
-            station
-          );
-
-        const minText =
-          temperatureRange?.min === null ||
-          temperatureRange?.min === undefined
-            ? "Not available"
-            : `${temperatureRange.min.toFixed(2)} °C`;
-
-        const maxText =
-          temperatureRange?.max === null ||
-          temperatureRange?.max === undefined
-            ? "Not available"
-            : `${temperatureRange.max.toFixed(2)} °C`;
+        const temperatureRange = getImeerAirTemperatureRange(station);
+        const minText = temperatureRange?.min == null
+          ? "Not available"
+          : `${temperatureRange.min.toFixed(2)} °C`;
+        const maxText = temperatureRange?.max == null
+          ? "Not available"
+          : `${temperatureRange.max.toFixed(2)} °C`;
 
         return `
           <div
@@ -4120,103 +3999,11 @@
             style="--summary-colour:${markerColour};"
           >
             <div class="monitoring-popup-title">
-              ${escapeHtml(station.stationName)}
+              ${escapeHtml(getMonitoringStationDisplayName(station))}
             </div>
-
             <div class="monitoring-popup-summary">
-              <strong>Parameter:</strong>
-              ${escapeHtml(
-                station.temperatureType ||
-                "Air temperature"
-              )}
-              <br />
-              <strong>Month:</strong>
-              ${escapeHtml(monthLabels[month])} 2025
-              <br />
-              <strong>Minimum:</strong>
-              ${escapeHtml(minText)}
-              <br />
-              <strong>Maximum:</strong>
-              ${escapeHtml(maxText)}
-              <br />
-              <strong>River:</strong>
-              ${escapeHtml(
-                station.river ||
-                station.waterBody ||
-                "Not available"
-              )}
-              <br />
-              <strong>Data provider:</strong>
-              ${escapeHtml(station.provider)}
-            </div>
-
-            <div class="monitoring-legend-note">
-              Reported values are the monthly minimum and maximum of daily mean air temperature. No monthly mean has been inferred.
-            </div>
-          </div>
-        `;
-      }
-
-      function buildImeerWaterQualityPopupHtml(
-        station,
-        config,
-        average,
-        markerColour,
-        rangeStatus
-      ) {
-        const month =
-          document.getElementById(
-            "month"
-          ).value;
-
-        const depthText =
-          Number.isFinite(
-            station.samplingDepthM
-          )
-            ? `${station.samplingDepthM} m`
-            : "Not available";
-
-        return `
-          <div
-            class="monitoring-popup-card"
-            style="--summary-colour:${markerColour};"
-          >
-            <div class="monitoring-popup-title">
-              ${escapeHtml(station.stationName)}
-            </div>
-
-            <div class="monitoring-popup-summary">
-              <strong>${escapeHtml(config.label)}:</strong>
-              ${escapeHtml(
-                formatMonitoringValue(
-                  average,
-                  config
-                )
-              )}
-              <br />
-              <strong>Month:</strong>
-              ${escapeHtml(monthLabels[month])} 2025
-              <br />
-              <strong>Sampling depth:</strong>
-              ${escapeHtml(depthText)}
-              <br />
-              <strong>Water body:</strong>
-              ${escapeHtml(
-                station.waterBody ||
-                station.river ||
-                "Not available"
-              )}
-              <br />
-              <strong>Data provider:</strong>
-              ${escapeHtml(station.provider)}
-              ${rangeStatus === "within" ||
-                rangeStatus === "missing"
-                ? ""
-                : `<br /><strong>Displayed range:</strong> ${escapeHtml(
-                    rangeStatus === "above"
-                      ? "Above maximum"
-                      : "Below minimum"
-                  )}`}
+              <strong>Air temperature (min–max):</strong>
+              ${escapeHtml(minText)} – ${escapeHtml(maxText)}
             </div>
           </div>
         `;
@@ -4226,88 +4013,11 @@
         station,
         config,
         average,
-        markerColour,
-        rangeStatus
+        markerColour
       ) {
-        if (
-          station.sourceType ===
-            "imeer_meteorological"
-        ) {
-          return buildImeerMeteorologicalPopupHtml(
-            station,
-            markerColour
-          );
+        if (station.sourceType === "imeer_meteorological") {
+          return buildImeerMeteorologicalPopupHtml(station, markerColour);
         }
-
-        if (
-          station.sourceType ===
-            "imeer_water_quality"
-        ) {
-          return buildImeerWaterQualityPopupHtml(
-            station,
-            config,
-            average,
-            markerColour,
-            rangeStatus
-          );
-        }
-
-        const month =
-          document.getElementById(
-            "month"
-          ).value;
-
-        const readingRows =
-          station.measurements
-            .map((measurement, index) => {
-              const value =
-                getConvertedMonitoringValue(
-                  measurement,
-                  config
-                );
-
-              if (value === null) {
-                return "";
-              }
-
-              const dateLabel =
-                measurement.properties
-                  .measurement_datetime ||
-                measurement.properties
-                  .sample_id ||
-                `Reading ${index + 1}`;
-
-              return `
-                <div class="monitoring-reading-row">
-                  <span>
-                    ${escapeHtml(dateLabel)}
-                  </span>
-
-                  <span class="monitoring-reading-value">
-                    ${escapeHtml(formatMonitoringValue(value, config))}
-                  </span>
-                </div>
-              `;
-            })
-            .filter(Boolean)
-            .join("");
-
-        const validReadingCount =
-          station.measurements.filter(
-            measurement =>
-              getConvertedMonitoringValue(
-                measurement,
-                config
-              ) !== null
-          ).length;
-
-        const readingContent =
-          readingRows || `
-            <div class="monitoring-reading-row">
-              <span>No available readings for this selection.</span>
-              <span></span>
-            </div>
-          `;
 
         return `
           <div
@@ -4315,71 +4025,14 @@
             style="--summary-colour:${markerColour};"
           >
             <div class="monitoring-popup-title">
-              ${escapeHtml(station.stationName)}
+              ${escapeHtml(getMonitoringStationDisplayName(station))}
             </div>
-
             <div class="monitoring-popup-summary">
-              <strong>${escapeHtml(config.label)} mean:</strong>
+              <strong>${escapeHtml(config.label)} average:</strong>
               ${escapeHtml(formatMonitoringValue(average, config))}
-              <br />
-              <strong>Month:</strong>
-              ${escapeHtml(monthLabels[month])}
-              <br />
-              <strong>Observation:</strong>
-              Surface
-              <br />
-              <strong>Data provider:</strong>
-              ${escapeHtml(station.provider)}
-              ${rangeStatus === "within" || rangeStatus === "missing"
-                ? ""
-                : `<br /><strong>Displayed range:</strong> ${escapeHtml(
-                    rangeStatus === "above"
-                      ? "Above maximum"
-                      : "Below minimum"
-                  )}`}
-              <br />
-              <strong>Readings:</strong>
-              ${validReadingCount}
-            </div>
-
-            <div class="monitoring-reading-list">
-              ${readingContent}
             </div>
           </div>
         `;
-      }
-
-      function makeImeerMonitoringMarker(
-        station,
-        markerColour,
-        outsideRange
-      ) {
-        return L.marker(
-          [
-            station.lat,
-            station.lon
-          ],
-          {
-            keyboard: true,
-            zIndexOffset: 1350,
-
-            icon: L.divIcon({
-              className:
-                "monitoring-station-icon",
-
-              html: `
-                <div
-                  class="monitoring-square-marker${outsideRange ? " is-outside-range" : ""}"
-                  style="--monitoring-colour:${markerColour};"
-                ></div>
-              `,
-
-              iconSize: [18, 18],
-              iconAnchor: [9, 9],
-              popupAnchor: [0, -12]
-            })
-          }
-        );
       }
 
       function refreshMonitoringMarkers({
@@ -4498,42 +4151,25 @@
             rangeStatus === "below" ||
             rangeStatus === "above";
 
-          const marker =
-            station.sourceType?.startsWith(
-              "imeer_"
-            )
-              ? makeImeerMonitoringMarker(
-                  station,
-                  markerColour,
-                  outsideRange
-                )
-              : L.circleMarker(
-                  [
-                    station.lat,
-                    station.lon
-                  ],
-                  {
-                    radius: 10,
-                    color: outsideRange
-                      ? "#111111"
-                      : "#ffffff",
-                    weight: outsideRange
-                      ? 3
-                      : 2,
-                    opacity: 1,
-                    fillColor: markerColour,
-                    fillOpacity: 0.95,
-                    bubblingMouseEvents: false
-                  }
-                );
+          const marker = L.circleMarker(
+            [station.lat, station.lon],
+            {
+              radius: 10,
+              color: outsideRange ? "#111111" : "#ffffff",
+              weight: outsideRange ? 3 : 2,
+              opacity: 1,
+              fillColor: markerColour,
+              fillOpacity: 0.95,
+              bubblingMouseEvents: false
+            }
+          );
 
           marker.bindPopup(
             buildMonitoringPopupHtml(
               station,
               config,
               average,
-              markerColour,
-              rangeStatus
+              markerColour
             ),
             {
               className: "sturgeon-popup monitoring-popup",
@@ -4543,11 +4179,11 @@
               minWidth:
                 window.innerWidth <= 640
                   ? 250
-                  : 360,
+                  : 300,
               maxWidth:
                 window.innerWidth <= 640
                   ? 280
-                  : 400
+                  : 320
             }
           );
 
