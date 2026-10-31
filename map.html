@@ -2421,6 +2421,11 @@
           databasePath: "geojson/IMEER_monitoring_measurements",
           defaultProvider: "IMEER of NASU",
           sourceType: "imeer"
+        },
+        {
+          databasePath: "geojson/PBB_monitoring_stations",
+          defaultProvider: "PBB (LP1)",
+          sourceType: "pbb"
         }
       ];
 
@@ -3977,8 +3982,11 @@
       }
 
       function getMonitoringStationDisplayName(station) {
-        return String(station.stationName || "Monitoring station")
+        const name = String(station.stationName || "Monitoring station")
           .replace(/^Sample\s+\d+\s*:\s*/i, "");
+        return station.sourceType === "pbb"
+          ? name.replace(/\s*[–—-]\s*water and eDNA sampling point\s*$/i, "").trim()
+          : name;
       }
 
       function buildImeerMeteorologicalPopupHtml(
