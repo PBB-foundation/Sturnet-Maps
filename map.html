@@ -1586,7 +1586,7 @@
           >
             Mnemiopsis leidyi
           </option>
-          <option value="mycE_gene">mycE gene</option>
+          <option value="mcyE_gene">mcyE gene</option>
           <option value="sxtA_gene">sxtA gene</option>
         </select>
       </div>
@@ -2269,9 +2269,9 @@
           scientific: true
         },
 
-        mycE_gene: {
-          label: "mycE gene",
-          shortLabel: "mycE gene",
+        mcyE_gene: {
+          label: "mcyE gene",
+          shortLabel: "mcyE gene",
           type: "gene"
         },
 
@@ -5076,6 +5076,12 @@
                   ?.coordinates ||
                 [];
 
+              // Apply the corrected eDNA identification only at Tuzla (Marmara).
+              const isTuzlaMarmara =
+                /^tuzla(?:\s*\(\s*marmara(?:\s+sea)?\s*\))?$/i.test(
+                  normaliseText(properties.area_name)
+                );
+
               return {
                 areaId:
                   properties.area_id,
@@ -5106,7 +5112,12 @@
                   Array.isArray(
                     properties.species
                   )
-                    ? properties.species
+                    ? properties.species.filter(
+                        key => !(
+                          isTuzlaMarmara &&
+                          key === "A_gueldenstaedtii"
+                        )
+                      )
                     : []
               };
             })
@@ -5197,8 +5208,9 @@
                   M_leidyi:
                     properties.M_leidyi,
 
-                  mycE_gene:
-                    properties.mycE_gene,
+                  mcyE_gene:
+                    // Accept the corrected field and the legacy database spelling.
+                    properties.mcyE_gene ?? properties.mycE_gene,
 
                   sxtA_gene:
                     properties.sxtA_gene
