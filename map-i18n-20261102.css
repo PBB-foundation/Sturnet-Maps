@@ -1,0 +1,11 @@
+.map-language-row{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:12px}
+.map-language-row label{flex:0 0 auto}
+.map-language-row select{min-width:0;max-width:100%;padding:7px 9px;border:1px solid #c8d2da;border-radius:7px;background:#fff;color:#162f42;font:inherit}
+.login-card .map-language-row{justify-content:flex-end}
+.login-card .map-language-row select{width:auto}
+.panel .map-language-row{padding-bottom:9px;border-bottom:1px solid #dce3e8;color:#333}
+.panel .row>label{min-width:76px;max-width:100px;overflow-wrap:anywhere;flex-shrink:0}
+.panel .filter-section-title,.legend-title,.monitoring-popup-title,.species-info-title{overflow-wrap:anywhere}
+@media(min-width:641px){.legend{left:auto;right:12px;bottom:70px;max-height:calc(100vh - 150px)}}
+@media(max-height:760px){body:has(.login-card){overflow-y:auto;display:block;padding:20px 0 110px}.login-card{margin:0 auto}.credits{position:relative;margin:18px 12px 0;left:auto;bottom:auto}}
+@media(max-width:480px){.login-card{padding:20px}.brand h1{font-size:24px}.panel .row{align-items:stretch;flex-direction:column;gap:4px}.panel .row>label{max-width:none}.map-language-row{gap:6px}}

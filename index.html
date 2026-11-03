@@ -227,6 +227,8 @@
       color: #ffffff;
     }
   </style>
+  <link rel="stylesheet" href="map-i18n-20261102.css?v=2">
+  <script src="map-i18n-20261102.js" defer></script>
 </head>
 <body>
   <video autoplay muted loop playsinline id="bgVideo">
@@ -360,7 +362,7 @@
     function goToMap() {
       if (redirecting) return;
       redirecting = true;
-      window.location.replace("map.html");
+      window.location.replace(window.SturNetMapI18n.url("map.html"));
     }
 
     function getFriendlyErrorMessage(error) {
@@ -386,7 +388,7 @@
         case "auth/configuration-not-found":
           return "Authentication is not enabled in Firebase yet. Please enable Email/Password in the Firebase console.";
         default:
-          return error.message || "Something went wrong. Please try again.";
+          return "Something went wrong. Please try again.";
       }
     }
 
