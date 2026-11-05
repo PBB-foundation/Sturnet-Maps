@@ -5078,9 +5078,8 @@
 
               // Apply the corrected eDNA identification only at Tuzla (Marmara).
               const isTuzlaMarmara =
-                /^tuzla(?:\s*\(\s*marmara(?:\s+sea)?\s*\))?$/i.test(
-                  normaliseText(properties.area_name)
-                );
+                /\btuzla\b/i.test(properties.area_name || "") &&
+                /\bmarmara\b/i.test(properties.area_name || "");
 
               return {
                 areaId:
